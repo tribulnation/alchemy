@@ -1,0 +1,65 @@
+[project]
+site_name = "Typed Alchemy"
+site_description = "Fully typed, validated async client for the Alchemy API."
+repo_name = "alchemy"
+repo_url = "https://github.com/tribulnation/alchemy"
+copyright = """
+Copyright &copy; 2026 Tribulnation
+"""
+nav = [
+  { "Intro" = "index.md" },
+  { "API Keys Setup" = "api-keys.md" },
+  { "How To" = [
+    { "Overview" = "how-to/index.md" },
+    "how-to/look-up-token-prices.md",
+    "how-to/inspect-wallet-portfolio.md",
+    "how-to/query-nfts.md",
+    "how-to/get-asset-transfers.md",
+    "how-to/paginate-through-results.md",
+    "how-to/advanced-rpc-methods.md",
+    "how-to/listen-to-streams.md",
+  ] },
+  { "Reference" = [
+    { "Overview" = "reference/index.md" },
+    "reference/error-handling.md",
+    "reference/env-vars.md",
+    { "API" = [{ "Overview" = "reference/api/index.md" }] },
+  ] },
+]
+
+[project.theme]
+language = "en"
+logo = "media/logo.png"
+favicon = "media/logo.png"
+features = [
+  "content.code.copy",
+]
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "black"
+accent = "amber"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "black"
+accent = "amber"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
+[project.extra]
+homepage = "https://tribulnation.com"
+
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+
+[project.markdown_extensions.pymdownx.superfences]
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["pkg/src"]
+inventories = ["https://docs.python.org/3/objects.inv"]
