@@ -1,11 +1,11 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Response200(TypedDict):
+class SpamContractCheckResponse(TypedDict):
   isSpamContract: NotRequired[bool]
   """True if the contract is marked as spam, false if it is considered valid."""
 
-adapter = validator(Response200)
+adapter = validator(SpamContractCheckResponse)
 
 class IsSpamContract(Endpoint):
   async def is_spam_contract(
@@ -13,7 +13,7 @@ class IsSpamContract(Endpoint):
     *,
     contract_address: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> SpamContractCheckResponse:
     """Checks whether a given NFT contract is classified as spam by Alchemy.
     
     Args:
@@ -24,7 +24,8 @@ class IsSpamContract(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-spam-endpoints/is-spam-contract-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-spam-endpoints/is-spam-contract-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
     }

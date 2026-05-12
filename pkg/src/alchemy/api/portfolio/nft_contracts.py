@@ -1,7 +1,10 @@
-from typing_extensions import Any, Literal, NotRequired, TypedDict
+from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, PaginatedResponse, validator
+from alchemy.api.nft.get_nft_metadata import NftImage
+from alchemy.api.nft.get_nft_metadata import NftOpenSeaMetadata
+from alchemy.api.nft.get_nft_metadata import NftTokenType
 
-class Address(TypedDict):
+class NftContractsAddress(TypedDict):
   address: str
   """Wallet address whose NFT contracts should be fetched."""
   networks: list[str]
@@ -13,28 +16,32 @@ class Address(TypedDict):
   spamConfidenceLevel: NotRequired[str]
   """Spam filtering threshold to apply to the returned contracts."""
 
-class ItemContract(TypedDict):
+class NftContractDisplayNft(TypedDict):
+  tokenId: NotRequired[str]
+  name: NotRequired[str | None]
+
+class NftContractMetadata(TypedDict):
   address: str
   name: NotRequired[str | None]
   symbol: NotRequired[str | None]
   totalSupply: NotRequired[str | None]
-  tokenType: str
+  tokenType: NftTokenType
   contractDeployer: NotRequired[str | None]
   deployedBlockNumber: NotRequired[int | None]
-  openSeaMetadata: NotRequired[dict[str, Any] | None]
+  openSeaMetadata: NotRequired[NftOpenSeaMetadata | None]
   totalBalance: NotRequired[str | None]
   numDistinctTokensOwned: NotRequired[str | None]
   isSpam: NotRequired[bool | None]
-  displayNft: NotRequired[dict[str, Any] | None]
-  image: NotRequired[dict[str, Any] | None]
+  displayNft: NotRequired[NftContractDisplayNft | None]
+  image: NotRequired[NftImage | None]
 
-class Contract(TypedDict):
-  contract: ItemContract
+class NftContract(TypedDict):
+  contract: NftContractMetadata
   network: str
   address: str
 
-class Request(TypedDict):
-  addresses: list[Address]
+class NftContractsRequest(TypedDict):
+  addresses: list[NftContractsAddress]
   withMetadata: NotRequired[bool]
   """Whether to include collection-level metadata in each returned contract."""
   pageKey: NotRequired[str]
@@ -46,18 +53,18 @@ class Request(TypedDict):
   sortOrder: NotRequired[Literal['asc', 'desc']]
   """Sort direction for the selected ordering field."""
 
-class Data(TypedDict):
-  contracts: list[Contract]
+class NftContractsData(TypedDict):
+  contracts: list[NftContract]
   totalCount: int
   pageKey: str | None
 
-class Response(TypedDict):
-  data: Data
+class NftContractsResponse(TypedDict):
+  data: NftContractsData
 
-adapter = validator(Response)
+adapter = validator(NftContractsResponse)
 
 class NftContracts(Endpoint):
-  async def __call__(self, request: Request, *, validate: bool | None = None) -> Response:
+  async def __call__(self, request: NftContractsRequest, *, validate: bool | None = None) -> NftContractsResponse:
     """Fetches NFT contracts held by wallet addresses, with aggregate collection-level metadata.
     
     Args:
@@ -68,7 +75,8 @@ class NftContracts(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-nft-contracts-by-address"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-nft-contracts-by-address)
+      """
     r = await self.request(
       'POST', '/assets/nfts/contracts/by-address',
       json=request
@@ -79,8 +87,8 @@ class NftContracts(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: Request, *, validate: bool | None = None,
-  ) -> PaginatedResponse[Contract, str]:
+    self, request: NftContractsRequest, *, validate: bool | None = None,
+  ) -> PaginatedResponse[NftContract, str]:
     """Fetch NFT contract pages.
 
     Args:
@@ -91,7 +99,7 @@ class NftContracts(Endpoint):
       An async iterable and awaitable paginated response.
     """
     async def next(state: str):
-      page_request: Request = {**request}
+      page_request: NftContractsRequest = {**request}
       if state:
         page_request['pageKey'] = state
       response = await self(page_request, validate=validate)

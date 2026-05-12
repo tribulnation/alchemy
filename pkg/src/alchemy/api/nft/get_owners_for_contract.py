@@ -1,25 +1,25 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class TokenBalancesItem(TypedDict):
+class OwnerTokenBalance(TypedDict):
   tokenId: NotRequired[str]
   """Token ID."""
   balance: NotRequired[str]
   """Quantity held."""
 
-class OwnersItem(TypedDict):
+class ContractOwner(TypedDict):
   ownerAddress: NotRequired[str]
   """Wallet address of the NFT holder."""
-  tokenBalances: NotRequired[list[TokenBalancesItem]]
+  tokenBalances: NotRequired[list[OwnerTokenBalance]]
   """Token holdings when withTokenBalances=true."""
 
-class Response200(TypedDict):
-  owners: NotRequired[list[OwnersItem]]
+class ContractOwnersResponse(TypedDict):
+  owners: NotRequired[list[ContractOwner]]
   """List of owner objects."""
   pageKey: NotRequired[str | None]
   """Pagination key for additional results."""
 
-adapter = validator(Response200)
+adapter = validator(ContractOwnersResponse)
 
 class GetOwnersForContract(Endpoint):
   async def get_owners_for_contract(
@@ -29,7 +29,7 @@ class GetOwnersForContract(Endpoint):
     with_token_balances: bool | None = None,
     page_key: str | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ContractOwnersResponse:
     """Retrieves all owners of a given NFT contract. Optionally includes token balances per owner.
     
     Args:
@@ -42,7 +42,8 @@ class GetOwnersForContract(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/nft-api/api-reference/nft-ownership-endpoints/get-owners-for-contract-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/nft-api/api-reference/nft-ownership-endpoints/get-owners-for-contract-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
     }

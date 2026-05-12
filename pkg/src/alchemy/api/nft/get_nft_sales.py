@@ -1,7 +1,27 @@
-from typing_extensions import Any, Literal, NotRequired, TypedDict
-from alchemy.core import Endpoint, validator
+from typing_extensions import Literal, NotRequired, TypedDict
+from alchemy.core import Endpoint, Timestamp, validator
 
-class Item(TypedDict):
+class NftSaleFee(TypedDict):
+  """Token payment amount in an NFT sale."""
+  amount: NotRequired[str]
+  """Raw token amount."""
+  tokenAddress: NotRequired[str]
+  """Payment token contract address."""
+  symbol: NotRequired[str]
+  """Payment token symbol."""
+  decimals: NotRequired[int]
+  """Payment token decimals."""
+
+class NftSaleValidAt(TypedDict):
+  """Block context at which the sales response was computed."""
+  blockNumber: NotRequired[int]
+  """Block number used for the response."""
+  blockHash: NotRequired[str]
+  """Block hash used for the response."""
+  blockTimestamp: NotRequired[Timestamp]
+  """Block timestamp used for the response."""
+
+class NftSale(TypedDict):
   marketplace: NotRequired[str]
   """Marketplace where the sale occurred."""
   marketplaceAddress: NotRequired[str]
@@ -18,11 +38,11 @@ class Item(TypedDict):
   """Seller wallet address."""
   taker: NotRequired[str]
   """Whether the buyer or seller was the price taker."""
-  sellerFee: NotRequired[dict[str, Any]]
+  sellerFee: NotRequired[NftSaleFee]
   """Payment from buyer to seller (amount, tokenAddress, symbol, decimals)."""
-  protocolFee: NotRequired[dict[str, Any]]
+  protocolFee: NotRequired[NftSaleFee]
   """Payment from buyer to marketplace protocol."""
-  royaltyFee: NotRequired[dict[str, Any]]
+  royaltyFee: NotRequired[NftSaleFee]
   """Payment from buyer to royalty collector."""
   blockNumber: NotRequired[int]
   """Block number of the sale."""
@@ -33,15 +53,15 @@ class Item(TypedDict):
   transactionHash: NotRequired[str]
   """Transaction hash of the sale."""
 
-class Response200(TypedDict):
-  nftSales: NotRequired[list[Item]]
+class NftSalesResponse(TypedDict):
+  nftSales: NotRequired[list[NftSale]]
   """Array of NFT sale events."""
-  pageKey: NotRequired[str]
+  pageKey: NotRequired[str | None]
   """Cursor for next page. Null if no more results."""
-  validAt: NotRequired[dict[str, Any]]
+  validAt: NotRequired[NftSaleValidAt]
   """Block context at which the data is valid."""
 
-adapter = validator(Response200)
+adapter = validator(NftSalesResponse)
 
 class GetNftSales(Endpoint):
   async def get_nft_sales(
@@ -59,7 +79,7 @@ class GetNftSales(Endpoint):
     limit: int | None = None,
     page_key: str | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> NftSalesResponse:
     """Retrieves NFT sales data from on-chain marketplaces with rich filtering options.
     
     Args:
@@ -80,7 +100,8 @@ class GetNftSales(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-sales-endpoints/get-nft-sales-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-sales-endpoints/get-nft-sales-v-3)
+      """
     params = {}
     if from_block is not None:
       params['fromBlock'] = from_block

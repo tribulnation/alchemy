@@ -1,42 +1,69 @@
 from typing_extensions import Any, Literal, NotRequired, TypedDict
-from alchemy.core import Endpoint, validator
+from alchemy.core import Endpoint, Timestamp, validator
 
-class Collection(TypedDict):
-  """Collection details."""
+NftTokenType = Literal['ERC721', 'ERC1155']
+
+class NftOpenSeaMetadata(TypedDict):
+  """OpenSea collection metadata."""
+  floorPrice: NotRequired[float | None]
+  """Collection floor price when available."""
+  collectionName: NotRequired[str | None]
+  """OpenSea collection name."""
+  collectionSlug: NotRequired[str | None]
+  """OpenSea collection slug."""
+  safelistRequestStatus: NotRequired[str | None]
+  """OpenSea safelist status."""
+  imageUrl: NotRequired[str | None]
+  """Collection image URL."""
+  description: NotRequired[str | None]
+  """Collection description."""
+  externalUrl: NotRequired[str | None]
+  """External collection URL."""
+  twitterUsername: NotRequired[str | None]
+  """Collection Twitter username."""
+  discordUrl: NotRequired[str | None]
+  """Collection Discord URL."""
+  bannerImageUrl: NotRequired[str | None]
+  """Collection banner image URL."""
+  lastIngestedAt: NotRequired[Timestamp | None]
+  """Last OpenSea metadata ingestion timestamp."""
+
+class NftCollection(TypedDict):
+  """NftCollection details."""
   name: NotRequired[str]
-  """Collection name."""
+  """NftCollection name."""
   slug: NotRequired[str]
   """OpenSea slug."""
   externalUrl: NotRequired[str | None]
   """External collection URL."""
-  bannerImageUrl: NotRequired[str]
+  bannerImageUrl: NotRequired[str | None]
   """Banner image URL."""
 
-class Contract(TypedDict):
-  """Contract-level metadata."""
+class NftContract(TypedDict):
+  """NftContract-level metadata."""
   address: NotRequired[str]
-  """Contract address."""
+  """NftContract address."""
   name: NotRequired[str]
-  """Contract name."""
+  """NftContract name."""
   symbol: NotRequired[str]
-  """Contract symbol."""
+  """NftContract symbol."""
   totalSupply: NotRequired[str]
   """Total token supply."""
-  tokenType: NotRequired[str]
+  tokenType: NotRequired[NftTokenType]
   """Token standard: ERC721 or ERC1155."""
   contractDeployer: NotRequired[str]
   """Deployer address."""
   deployedBlockNumber: NotRequired[float]
   """Deployment block number."""
-  openSeaMetadata: NotRequired[dict[str, Any]]
+  openSeaMetadata: NotRequired[NftOpenSeaMetadata]
   """OpenSea collection metadata."""
-  isSpam: NotRequired[bool]
+  isSpam: NotRequired[bool | None]
   """Whether the contract is classified as spam."""
   spamClassifications: NotRequired[list[str]]
   """Spam classification labels."""
 
-class Image(TypedDict):
-  """Image URLs and metadata."""
+class NftImage(TypedDict):
+  """NftImage URLs and metadata."""
   cachedUrl: NotRequired[str | None]
   """Alchemy-cached image URL."""
   thumbnailUrl: NotRequired[str | None]
@@ -50,48 +77,48 @@ class Image(TypedDict):
   originalUrl: NotRequired[str | None]
   """Original image URL from the NFT metadata."""
 
-class Mint(TypedDict):
-  """Mint information."""
+class NftMint(TypedDict):
+  """NftMint information."""
   mintAddress: NotRequired[str | None]
   """Address that minted the token."""
   blockNumber: NotRequired[int | None]
   """Block when minted."""
-  timestamp: NotRequired[str | None]
+  timestamp: NotRequired[Timestamp | None]
   """ISO timestamp of mint."""
   transactionHash: NotRequired[str | None]
-  """Mint transaction hash."""
+  """NftMint transaction hash."""
 
-class Raw(TypedDict):
-  """Raw on-chain data."""
+class NftRawMetadata(TypedDict):
+  """NftRawMetadata on-chain data."""
   tokenUri: NotRequired[str]
   """Original token URI from the contract."""
-  metadata: NotRequired[dict[str, Any]]
+  metadata: NotRequired[dict[str, Any] | None]
   """Parsed metadata JSON."""
   error: NotRequired[str | None]
   """Error message if metadata could not be fetched."""
 
-class Response200(TypedDict):
-  contract: NotRequired[Contract]
+class NftMetadataResponse(TypedDict):
+  contract: NotRequired[NftContract]
   tokenId: NotRequired[str]
   """Token ID."""
-  tokenType: NotRequired[str]
+  tokenType: NotRequired[NftTokenType]
   """Token standard: ERC721 or ERC1155."""
   name: NotRequired[str]
   """NFT name from metadata."""
   description: NotRequired[str | None]
   """NFT description from metadata."""
-  image: NotRequired[Image]
-  raw: NotRequired[Raw]
-  collection: NotRequired[Collection]
+  image: NotRequired[NftImage]
+  raw: NotRequired[NftRawMetadata]
+  collection: NotRequired[NftCollection]
   tokenUri: NotRequired[str]
   """Metadata location URI."""
-  timeLastUpdated: NotRequired[str]
+  timeLastUpdated: NotRequired[Timestamp]
   """ISO timestamp of last metadata cache refresh."""
-  mint: NotRequired[Mint]
+  mint: NotRequired[NftMint]
   owners: NotRequired[list[str] | None]
   """Current owner addresses."""
 
-adapter = validator(Response200)
+adapter = validator(NftMetadataResponse)
 
 class GetNftMetadata(Endpoint):
   async def get_nft_metadata(
@@ -99,11 +126,11 @@ class GetNftMetadata(Endpoint):
     *,
     contract_address: str,
     token_id: str,
-    token_type: Literal['ERC721', 'ERC1155'] | None = None,
+    token_type: NftTokenType | None = None,
     token_uri_timeout_in_ms: int | None = None,
     refresh_cache: bool | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> NftMetadataResponse:
     """Fetches metadata for a specific NFT identified by contract address and token ID.
     
     Args:
@@ -118,7 +145,8 @@ class GetNftMetadata(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/nft-api/api-reference/nft-metadata-endpoints/get-nft-metadata-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/nft-api/api-reference/nft-metadata-endpoints/get-nft-metadata-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
       'tokenId': token_id,

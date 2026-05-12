@@ -1,11 +1,11 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Response200(TypedDict):
+class ContractHolderCheckResponse(TypedDict):
   isHolderOfContract: NotRequired[bool]
   """True if the wallet owns at least one token in the contract."""
 
-adapter = validator(Response200)
+adapter = validator(ContractHolderCheckResponse)
 
 class IsHolderOfContract(Endpoint):
   async def is_holder_of_contract(
@@ -14,7 +14,7 @@ class IsHolderOfContract(Endpoint):
     wallet: str,
     contract_address: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ContractHolderCheckResponse:
     """Checks whether a given wallet owns any token in a specified NFT contract.
     
     Args:
@@ -26,7 +26,8 @@ class IsHolderOfContract(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/is-holder-of-contract-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/is-holder-of-contract-v-3)
+      """
     params: dict = {
       'wallet': wallet,
       'contractAddress': contract_address,

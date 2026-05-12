@@ -21,7 +21,8 @@ class ReportSpam(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-spam-endpoints/report-spam-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-spam-endpoints/report-spam-v-3)
+      """
     params: dict = {
       'address': address,
       'isSpam': is_spam,

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class PriceEntry(TypedDict):
+class TokenPriceEntry(TypedDict):
   currency: str
   """Currency code (e.g. 'usd')."""
   value: str
@@ -13,19 +13,19 @@ class PriceEntry(TypedDict):
 class SymbolPriceResult(TypedDict):
   symbol: str
   """Token ticker symbol."""
-  prices: list[PriceEntry]
+  prices: list[TokenPriceEntry]
   """Array of price objects, one per currency."""
   error: NotRequired[str | None]
   """Error message if the symbol could not be resolved, otherwise null."""
 
-class Response(TypedDict):
+class TokenPricesBySymbolResponse(TypedDict):
   data: list[SymbolPriceResult]
   """Array of price results, one per requested symbol."""
 
-adapter = validator(Response)
+adapter = validator(TokenPricesBySymbolResponse)
 
 class BySymbol(Endpoint):
-  async def by_symbol(self, *, symbols: list[str], validate: bool | None = None) -> Response:
+  async def by_symbol(self, *, symbols: list[str], validate: bool | None = None) -> TokenPricesBySymbolResponse:
     """Fetches current prices for up to 25 tokens identified by their ticker symbols.
     
     Args:
@@ -36,7 +36,8 @@ class BySymbol(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-token-prices-by-symbol"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-token-prices-by-symbol)
+      """
     params: dict = {
       'symbols': symbols,
     }

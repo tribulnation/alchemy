@@ -1,11 +1,12 @@
-from typing_extensions import Any, NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
+from .get_nft_metadata import NftContract
 
-class Response200(TypedDict):
-  contracts: NotRequired[list[dict[str, Any]]]
+class ContractMetadataSearchResponse(TypedDict):
+  contracts: NotRequired[list[NftContract]]
   """Array of matching contract metadata objects."""
 
-adapter = validator(Response200)
+adapter = validator(ContractMetadataSearchResponse)
 
 class SearchContractMetadata(Endpoint):
   async def search_contract_metadata(
@@ -13,7 +14,7 @@ class SearchContractMetadata(Endpoint):
     *,
     query: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ContractMetadataSearchResponse:
     """Searches contract metadata across ERC-721 and ERC-1155 contracts for a given keyword. Beta.
     
     Args:
@@ -24,7 +25,8 @@ class SearchContractMetadata(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/search-contract-metadata-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/search-contract-metadata-v-3)
+      """
     params: dict = {
       'query': query,
     }

@@ -4,23 +4,25 @@ from alchemy.core import NftEndpoint, PaginatedResponse
 from .compute_rarity import ComputeRarity
 from .get_collection_metadata import GetCollectionMetadata
 from .get_collections_for_owner import GetCollectionsForOwner
-from .get_collections_for_owner import Item as Collection
+from .get_collections_for_owner import OwnerCollection
 from .get_contract_metadata import GetContractMetadata
 from .get_contract_metadata_batch import GetContractMetadataBatch
 from .get_contracts_for_owner import GetContractsForOwner
-from .get_contracts_for_owner import Item as OwnerContract
+from .get_contracts_for_owner import OwnerContract
 from .get_floor_price import GetFloorPrice
 from .get_nft_metadata import GetNftMetadata
+from .get_nft_metadata import NftMetadataResponse
 from .get_nft_metadata_batch import GetNftMetadataBatch
 from .get_nft_sales import GetNftSales
-from .get_nft_sales import Item as NftSale
+from .get_nft_sales import NftSale
 from .get_nfts_for_collection import GetNftsForCollection
 from .get_nfts_for_contract import GetNftsForContract
 from .get_nfts_for_owner import GetNftsForOwner
-from .get_nfts_for_owner import Item as OwnedNft
+from .get_nfts_for_owner import OwnedNft
 from .get_owners_for_contract import GetOwnersForContract
-from .get_owners_for_contract import OwnersItem
+from .get_owners_for_contract import ContractOwner
 from .get_owners_for_nft import GetOwnersForNft
+from .get_owners_for_nft import NftOwnersResponse
 from .get_spam_contracts import GetSpamContracts
 from .invalidate_contract import InvalidateContract
 from .is_airdrop_nft import IsAirdropNft
@@ -84,7 +86,7 @@ class Nft(NftEndpoint, ComputeRarity, GetCollectionMetadata, GetCollectionsForOw
     include_filters: list[Literal['SPAM', 'AIRDROPS']] | None = None,
     exclude_filters: list[Literal['SPAM', 'AIRDROPS']] | None = None,
     validate: bool | None = None,
-  ) -> PaginatedResponse[Collection, str]:
+  ) -> PaginatedResponse[OwnerCollection, str]:
     """Fetch owner collection pages."""
     async def next(state: str):
       response = await self.get_collections_for_owner(
@@ -126,7 +128,7 @@ class Nft(NftEndpoint, ComputeRarity, GetCollectionMetadata, GetCollectionsForOw
     collection_slug: str | None = None, with_metadata: bool | None = None,
     limit: int | None = None, token_uri_timeout_in_ms: int | None = None,
     validate: bool | None = None,
-  ) -> PaginatedResponse[dict, str]:
+  ) -> PaginatedResponse[NftMetadataResponse, str]:
     """Fetch collection NFT pages."""
     async def next(state: str):
       response = await self.get_nfts_for_collection(
@@ -143,7 +145,7 @@ class Nft(NftEndpoint, ComputeRarity, GetCollectionMetadata, GetCollectionsForOw
     self, *, contract_address: str, with_metadata: bool | None = None,
     limit: int | None = None, token_uri_timeout_in_ms: int | None = None,
     validate: bool | None = None,
-  ) -> PaginatedResponse[dict, str]:
+  ) -> PaginatedResponse[NftMetadataResponse, str]:
     """Fetch contract NFT pages."""
     async def next(state: str):
       response = await self.get_nfts_for_contract(
@@ -159,13 +161,29 @@ class Nft(NftEndpoint, ComputeRarity, GetCollectionMetadata, GetCollectionsForOw
   def get_owners_for_contract_paged(
     self, *, contract_address: str, with_token_balances: bool | None = None,
     validate: bool | None = None,
-  ) -> PaginatedResponse[OwnersItem, str]:
+  ) -> PaginatedResponse[ContractOwner, str]:
     """Fetch contract owner pages."""
     async def next(state: str):
       response = await self.get_owners_for_contract(
         contract_address=contract_address,
         with_token_balances=with_token_balances,
         page_key=state or None, validate=validate,
+      )
+      return response.get('owners', []), response.get('pageKey')
+
+    return PaginatedResponse('', next)
+
+  def get_owners_for_nft_paged(
+    self, *, contract_address: str, token_id: str,
+    validate: bool | None = None,
+  ) -> PaginatedResponse[str, str]:
+    """Fetch NFT owner address pages."""
+    async def next(state: str):
+      response: NftOwnersResponse = await self.get_owners_for_nft(
+        contract_address=contract_address,
+        token_id=token_id,
+        page_key=state or None,
+        validate=validate,
       )
       return response.get('owners', []), response.get('pageKey')
 

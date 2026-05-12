@@ -1,13 +1,14 @@
-from typing_extensions import Any, NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
+from .get_nft_metadata import NftMetadataResponse
 
-class Response200(TypedDict):
-  nfts: NotRequired[list[dict[str, Any]]]
+class ContractNftsResponse(TypedDict):
+  nfts: NotRequired[list[NftMetadataResponse]]
   """Array of NFT objects in the contract."""
   pageKey: NotRequired[str]
   """Token ID offset for fetching the next page."""
 
-adapter = validator(Response200)
+adapter = validator(ContractNftsResponse)
 
 class GetNftsForContract(Endpoint):
   async def get_nfts_for_contract(
@@ -19,7 +20,7 @@ class GetNftsForContract(Endpoint):
     limit: int | None = None,
     token_uri_timeout_in_ms: int | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ContractNftsResponse:
     """Retrieves all NFTs belonging to a given contract address.
     
     Args:
@@ -34,7 +35,8 @@ class GetNftsForContract(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-nf-ts-for-contract-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-nf-ts-for-contract-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
     }

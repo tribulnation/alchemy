@@ -1,7 +1,9 @@
-from typing_extensions import Any, NotRequired, TypedDict
+from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Options(TypedDict):
+TokenSpec = Literal['erc20', 'NATIVE_TOKEN', 'DEFAULT_TOKENS'] | list[str]
+
+class TokenBalancesOptions(TypedDict):
   """Pagination options."""
   pageKey: NotRequired[str]
   """Pagination cursor returned by a previous response."""
@@ -14,7 +16,7 @@ class TokenBalance(TypedDict):
   tokenBalance: str | None
   """Hex-encoded token balance, or null if an error occurred fetching this token."""
 
-class Response(TypedDict):
+class TokenBalancesResponse(TypedDict):
   address: str
   """The queried wallet address."""
   tokenBalances: list[TokenBalance]
@@ -22,25 +24,33 @@ class Response(TypedDict):
   pageKey: NotRequired[str]
   """Pagination cursor for retrieving the next page of balances. Present only when more results exist."""
 
-adapter = validator(Response)
+adapter = validator(TokenBalancesResponse)
 
 class GetTokenBalances(Endpoint):
   async def get_token_balances(
     self,
-    params: list[Any],
+    address: str,
+    token_spec: TokenSpec = 'erc20',
     *,
+    options: TokenBalancesOptions | None = None,
     validate: bool | None = None
-  ) -> Response:
+  ) -> TokenBalancesResponse:
     """Returns ERC-20 token balances (or native token balance) for a wallet address via the `alchemy_getTokenBalances` JSON-RPC method.
 
     Args:
-      params: JSON-RPC positional parameters: wallet address, token selection, and optional pagination options.
+      address: Wallet address to inspect.
+      token_spec: Token selection: all ERC-20 tokens, native token, default tokens, or explicit contract addresses.
+      options: Pagination options.
       validate: Validation override for this request.
 
     Returns:
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-balances"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-balances)
+      """
+    params = [address, token_spec]
+    if options is not None:
+      params.append(options)
     r = await self.rpc_request('alchemy_getTokenBalances', params, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

@@ -1,11 +1,17 @@
-from typing_extensions import Any, Literal, NotRequired, TypedDict
-from alchemy.core import Endpoint, PaginatedResponse, validator
+from typing_extensions import Literal, NotRequired, TypedDict
+from alchemy.core import Endpoint, PaginatedResponse, Timestamp, validator
+from alchemy.api.nft.get_nft_metadata import NftCollection
+from alchemy.api.nft.get_nft_metadata import NftContract
+from alchemy.api.nft.get_nft_metadata import NftImage
+from alchemy.api.nft.get_nft_metadata import NftMint
+from alchemy.api.nft.get_nft_metadata import NftRawMetadata
+from alchemy.api.nft.get_nft_metadata import NftTokenType
 
-class AcquiredAt(TypedDict):
-  blockTimestamp: NotRequired[str | None]
+class NftAcquiredAt(TypedDict):
+  blockTimestamp: NotRequired[Timestamp | None]
   blockNumber: NotRequired[int | None]
 
-class Address(TypedDict):
+class NftsAddress(TypedDict):
   address: str
   """Wallet address whose NFTs should be fetched."""
   networks: list[str]
@@ -17,38 +23,26 @@ class Address(TypedDict):
   spamConfidenceLevel: NotRequired[str]
   """Spam filtering threshold to apply to the returned NFTs."""
 
-class Contract(TypedDict):
-  address: str
-  name: NotRequired[str | None]
-  symbol: NotRequired[str | None]
-  totalSupply: NotRequired[str | None]
-  tokenType: str
-  contractDeployer: NotRequired[str | None]
-  deployedBlockNumber: NotRequired[int | None]
-  openSeaMetadata: NotRequired[dict[str, Any] | None]
-  isSpam: NotRequired[bool | None]
-  spamClassifications: NotRequired[list[str]]
-
-class Nft(TypedDict):
+class PortfolioNft(TypedDict):
   tokenId: str
   balance: str
-  acquiredAt: NotRequired[AcquiredAt | None]
+  acquiredAt: NotRequired[NftAcquiredAt | None]
   network: str
   address: str
-  contract: Contract
-  tokenType: str
+  contract: NftContract
+  tokenType: NftTokenType
   name: NotRequired[str | None]
   description: NotRequired[str | None]
   tokenUri: NotRequired[str | None]
-  image: NotRequired[dict[str, Any] | None]
-  animation: NotRequired[dict[str, Any] | None]
-  raw: NotRequired[dict[str, Any] | None]
-  collection: NotRequired[dict[str, Any] | None]
-  mint: NotRequired[dict[str, Any] | None]
-  timeLastUpdated: NotRequired[str | None]
+  image: NotRequired[NftImage | None]
+  animation: NotRequired[NftImage | None]
+  raw: NotRequired[NftRawMetadata | None]
+  collection: NotRequired[NftCollection | None]
+  mint: NotRequired[NftMint | None]
+  timeLastUpdated: NotRequired[Timestamp | None]
 
-class Request(TypedDict):
-  addresses: list[Address]
+class PortfolioNftsRequest(TypedDict):
+  addresses: list[NftsAddress]
   withMetadata: NotRequired[bool]
   """Whether to include NFT metadata in each returned item."""
   pageKey: NotRequired[str]
@@ -60,18 +54,18 @@ class Request(TypedDict):
   sortOrder: NotRequired[Literal['asc', 'desc']]
   """Sort direction for the selected ordering field."""
 
-class Data(TypedDict):
-  ownedNfts: list[Nft]
+class PortfolioNftsData(TypedDict):
+  ownedNfts: list[PortfolioNft]
   totalCount: int
   pageKey: str | None
 
-class Response(TypedDict):
-  data: Data
+class PortfolioNftsResponse(TypedDict):
+  data: PortfolioNftsData
 
-adapter = validator(Response)
+adapter = validator(PortfolioNftsResponse)
 
 class Nfts(Endpoint):
-  async def __call__(self, request: Request, *, validate: bool | None = None) -> Response:
+  async def __call__(self, request: PortfolioNftsRequest, *, validate: bool | None = None) -> PortfolioNftsResponse:
     """Fetches NFTs held by wallet addresses, with optional metadata and filtering controls.
     
     Args:
@@ -82,7 +76,8 @@ class Nfts(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-nfts-by-address"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-nfts-by-address)
+      """
     r = await self.request('POST', '/assets/nfts/by-address', json=request)
     
     if r.status_code != 200:
@@ -90,8 +85,8 @@ class Nfts(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: Request, *, validate: bool | None = None,
-  ) -> PaginatedResponse[Nft, str]:
+    self, request: PortfolioNftsRequest, *, validate: bool | None = None,
+  ) -> PaginatedResponse[PortfolioNft, str]:
     """Fetch NFT pages.
 
     Args:
@@ -102,7 +97,7 @@ class Nfts(Endpoint):
       An async iterable and awaitable paginated response.
     """
     async def next(state: str):
-      page_request: Request = {**request}
+      page_request: PortfolioNftsRequest = {**request}
       if state:
         page_request['pageKey'] = state
       response = await self(page_request, validate=validate)

@@ -30,12 +30,12 @@ class AssetChange(AssetChangeKeywords):
   logo: NotRequired[str | None]
   """Token logo URL."""
 
-ParamsKeywords = TypedDict('ParamsKeywords', {'from': str})
+AssetChangesParamsKeywords = TypedDict('AssetChangesParamsKeywords', {'from': str})
 """
 - `from`: Sender address (20-byte hex).
 """
 
-class Params(ParamsKeywords):
+class AssetChangesParams(AssetChangesParamsKeywords):
   """Unsigned transaction object to simulate."""
   to: str
   """Recipient or contract address (20-byte hex)."""
@@ -46,7 +46,7 @@ class Params(ParamsKeywords):
   gas: NotRequired[str]
   """Gas limit for the simulated transaction as a hex string."""
 
-class Response(TypedDict):
+class AssetChangesResponse(TypedDict):
   changes: list[AssetChange]
   """List of asset changes (transfers and approvals) resulting from the simulated transaction."""
   gasUsed: str
@@ -54,10 +54,10 @@ class Response(TypedDict):
   error: NotRequired[str | None]
   """Error message if the simulation failed; null on success."""
 
-adapter = validator(Response)
+adapter = validator(AssetChangesResponse)
 
 class AssetChanges(Endpoint):
-  async def asset_changes(self, params: Params, *, validate: bool | None = None) -> Response:
+  async def asset_changes(self, params: AssetChangesParams, *, validate: bool | None = None) -> AssetChangesResponse:
     """Simulates a transaction and returns a list of asset changes (token transfers and approvals) without broadcasting via the `alchemy_simulateAssetChanges` JSON-RPC method.
 
     Args:
@@ -68,6 +68,7 @@ class AssetChanges(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/simulation-asset-changes"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/simulation-asset-changes)
+      """
     r = await self.rpc_request('alchemy_simulateAssetChanges', params, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class HistoricalPricePoint(TypedDict):
+class HistoricalTokenPricePoint(TypedDict):
   value: str
   """Token price at this timestamp as a decimal string."""
   timestamp: datetime
@@ -12,7 +12,7 @@ class HistoricalPricePoint(TypedDict):
   totalVolume: NotRequired[str]
   """Total trading volume at this timestamp (only present when `withMarketData=true`)."""
 
-class Request(TypedDict):
+class HistoricalTokenPricesRequest(TypedDict):
   symbol: NotRequired[str]
   """Token ticker symbol (e.g. 'ETH'). Required if `network` and `address` are not provided."""
   network: NotRequired[str]
@@ -28,7 +28,7 @@ class Request(TypedDict):
   withMarketData: NotRequired[bool]
   """Whether to include market cap and total volume for each data point."""
 
-class Response(TypedDict):
+class HistoricalTokenPricesResponse(TypedDict):
   symbol: NotRequired[str]
   """Token symbol (present when queried by symbol)."""
   network: NotRequired[str]
@@ -37,13 +37,13 @@ class Response(TypedDict):
   """Token contract address (present when queried by address)."""
   currency: str
   """Currency of price data (e.g. 'usd')."""
-  data: list[HistoricalPricePoint]
+  data: list[HistoricalTokenPricePoint]
   """Array of historical price data points."""
 
-adapter = validator(Response)
+adapter = validator(HistoricalTokenPricesResponse)
 
 class Historical(Endpoint):
-  async def historical(self, request: Request, *, validate: bool | None = None) -> Response:
+  async def historical(self, request: HistoricalTokenPricesRequest, *, validate: bool | None = None) -> HistoricalTokenPricesResponse:
     """Fetches historical price data for a token identified either by symbol or by network and contract address.
     
     Args:
@@ -54,7 +54,8 @@ class Historical(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-historical-token-prices"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-historical-token-prices)
+      """
     r = await self.request('POST', '/tokens/historical', json=request)
     
     if r.status_code != 200:

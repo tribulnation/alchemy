@@ -1,48 +1,72 @@
-from typing_extensions import Any, Literal, NotRequired, TypedDict
-from alchemy.core import Endpoint, validator
+from typing_extensions import Literal, NotRequired, TypedDict
+from alchemy.core import Endpoint, Timestamp, validator
+from .get_nft_metadata import NftCollection
+from .get_nft_metadata import NftContract
+from .get_nft_metadata import NftImage
+from .get_nft_metadata import NftMint
+from .get_nft_metadata import NftRawMetadata
+from .get_nft_metadata import NftTokenType
 
-class Item(TypedDict):
+class NftAcquiredAt(TypedDict):
+  """Block context for when ownership was acquired."""
+  blockTimestamp: NotRequired[Timestamp | None]
+  """Timestamp of the acquisition block."""
+  blockNumber: NotRequired[int | None]
+  """Acquisition block number."""
+
+class NftValidAt(TypedDict):
+  """Block context at which the ownership response was computed."""
+  blockNumber: NotRequired[int]
+  """Block number used for the response."""
+  blockHash: NotRequired[str]
+  """Block hash used for the response."""
+  blockTimestamp: NotRequired[Timestamp]
+  """Block timestamp used for the response."""
+
+class OwnedNft(TypedDict):
   """NFT object."""
-  contract: NotRequired[dict[str, Any]]
+  contract: NotRequired[NftContract]
   """Contract-level metadata."""
   tokenId: NotRequired[str]
   """Token ID."""
-  tokenType: NotRequired[str]
+  tokenType: NotRequired[NftTokenType]
   """Token standard: ERC721 or ERC1155."""
   name: NotRequired[str]
   """NFT name from metadata."""
   description: NotRequired[str]
   """NFT description from metadata."""
-  image: NotRequired[dict[str, Any]]
+  image: NotRequired[NftImage]
   """Image URLs (cachedUrl, thumbnailUrl, pngUrl, originalUrl) and metadata."""
-  raw: NotRequired[dict[str, Any]]
+  animation: NotRequired[NftImage | None]
+  """Animation URLs and metadata."""
+  raw: NotRequired[NftRawMetadata]
   """Raw on-chain data including tokenUri and metadata."""
-  collection: NotRequired[dict[str, Any]]
+  collection: NotRequired[NftCollection]
   """Collection details including name, slug, externalUrl."""
   tokenUri: NotRequired[str]
   """Metadata location URI."""
-  timeLastUpdated: NotRequired[str]
+  timeLastUpdated: NotRequired[Timestamp]
   """ISO timestamp of last metadata cache refresh."""
-  acquiredAt: NotRequired[dict[str, Any]]
+  acquiredAt: NotRequired[NftAcquiredAt]
   """Acquisition block and timestamp (when orderBy=transferTime)."""
-  mint: NotRequired[dict[str, Any]]
+  mint: NotRequired[NftMint]
   """Mint info: mintAddress, blockNumber, timestamp, transactionHash."""
   owners: NotRequired[list[str] | None]
   """Current owner addresses."""
   balance: NotRequired[str]
   """Token quantity held (relevant for ERC-1155)."""
 
-class Response200(TypedDict):
-  ownedNfts: NotRequired[list[Item]]
+class OwnedNftsResponse(TypedDict):
+  ownedNfts: NotRequired[list[OwnedNft]]
   """Array of NFT objects owned by the wallet."""
   totalCount: NotRequired[int]
   """Total distinct NFTs owned across all pages."""
   pageKey: NotRequired[str]
   """Cursor for the next page. Absent if no more pages."""
-  validAt: NotRequired[dict[str, Any]]
+  validAt: NotRequired[NftValidAt]
   """Block context at which the response was computed."""
 
-adapter = validator(Response200)
+adapter = validator(OwnedNftsResponse)
 
 class GetNftsForOwner(Endpoint):
   async def get_nfts_for_owner(
@@ -59,7 +83,7 @@ class GetNftsForOwner(Endpoint):
     page_key: str | None = None,
     page_size: int | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> OwnedNftsResponse:
     """Fetches all NFTs owned by a given wallet address on the requested chain. Supports filtering by contract, spam confidence, and metadata inclusion.
     
     Args:
@@ -79,7 +103,8 @@ class GetNftsForOwner(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-nf-ts-for-owner-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-nf-ts-for-owner-v-3)
+      """
     params: dict = {
       'owner': owner,
     }

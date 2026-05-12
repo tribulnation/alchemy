@@ -1,13 +1,13 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Response200(TypedDict):
+class InvalidateContractResponse(TypedDict):
   success: NotRequired[bool]
   """True if the contract was successfully invalidated."""
   numTokensInvalidated: NotRequired[float]
   """Number of tokens invalidated. -1 if the token count is unknown."""
 
-adapter = validator(Response200)
+adapter = validator(InvalidateContractResponse)
 
 class InvalidateContract(Endpoint):
   async def invalidate_contract(
@@ -15,7 +15,7 @@ class InvalidateContract(Endpoint):
     *,
     contract_address: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> InvalidateContractResponse:
     """Marks all cached tokens for a contract as stale, ensuring the next query fetches fresh data. Use after collection reveals.
     
     Args:
@@ -26,7 +26,8 @@ class InvalidateContract(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/invalidate-contract-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/invalidate-contract-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
     }

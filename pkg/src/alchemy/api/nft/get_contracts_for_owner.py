@@ -1,7 +1,17 @@
-from typing_extensions import Any, Literal, NotRequired, TypedDict
+from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
+from .get_nft_metadata import NftImage
+from .get_nft_metadata import NftOpenSeaMetadata
+from .get_nft_metadata import NftTokenType
 
-class Item(TypedDict):
+class OwnerDisplayNft(TypedDict):
+  """Representative NFT for display."""
+  tokenId: NotRequired[str]
+  """Token ID."""
+  name: NotRequired[str | None]
+  """NFT name."""
+
+class OwnerContract(TypedDict):
   address: NotRequired[str]
   """Contract address."""
   name: NotRequired[str]
@@ -10,7 +20,7 @@ class Item(TypedDict):
   """Contract symbol."""
   totalSupply: NotRequired[str]
   """Total supply in the collection."""
-  tokenType: NotRequired[str]
+  tokenType: NotRequired[NftTokenType]
   """Token standard (ERC721, ERC1155)."""
   totalBalance: NotRequired[str]
   """Sum of NFT balances held by owner."""
@@ -18,22 +28,22 @@ class Item(TypedDict):
   """Count of distinct token IDs held."""
   isSpam: NotRequired[bool]
   """Whether the contract is classified as spam."""
-  displayNft: NotRequired[dict[str, Any]]
+  displayNft: NotRequired[OwnerDisplayNft]
   """Representative NFT for display."""
-  image: NotRequired[dict[str, Any]]
+  image: NotRequired[NftImage]
   """Contract image URLs."""
-  openSeaMetadata: NotRequired[dict[str, Any]]
+  openSeaMetadata: NotRequired[NftOpenSeaMetadata]
   """OpenSea collection metadata."""
 
-class Response200(TypedDict):
-  contracts: NotRequired[list[Item]]
+class OwnerContractsResponse(TypedDict):
+  contracts: NotRequired[list[OwnerContract]]
   """List of NFT contract objects held by the owner."""
   pageKey: NotRequired[str]
   """Cursor for next page."""
   totalCount: NotRequired[int]
   """Total number of contracts held."""
 
-adapter = validator(Response200)
+adapter = validator(OwnerContractsResponse)
 
 class GetContractsForOwner(Endpoint):
   async def get_contracts_for_owner(
@@ -48,7 +58,7 @@ class GetContractsForOwner(Endpoint):
     order_by: Literal['transferTime'] | None = None,
     spam_confidence_level: Literal['VERY_HIGH', 'HIGH', 'MEDIUM', 'LOW'] | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> OwnerContractsResponse:
     """Lists all NFT contracts (collections) for which a given wallet holds at least one token.
     
     Args:
@@ -66,7 +76,8 @@ class GetContractsForOwner(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-contracts-for-owner-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-contracts-for-owner-v-3)
+      """
     params: dict = {
       'owner': owner,
     }

@@ -1,11 +1,11 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Response200(TypedDict):
+class AirdropNftCheckResponse(TypedDict):
   isAirdrop: NotRequired[bool]
   """True if the token was airdropped, false otherwise."""
 
-adapter = validator(Response200)
+adapter = validator(AirdropNftCheckResponse)
 
 class IsAirdropNft(Endpoint):
   async def is_airdrop_nft(
@@ -14,7 +14,7 @@ class IsAirdropNft(Endpoint):
     contract_address: str,
     token_id: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> AirdropNftCheckResponse:
     """Checks whether a specific NFT token was airdropped (minted by an address different from the recipient).
     
     Args:
@@ -26,7 +26,8 @@ class IsAirdropNft(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/nft-api/api-reference/nft-spam-endpoints/is-airdrop-nft-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/nft-api/api-reference/nft-spam-endpoints/is-airdrop-nft-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
       'tokenId': token_id,

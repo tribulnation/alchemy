@@ -77,9 +77,9 @@ async with Alchemy.new() as client:
     owner='vitalik.eth',
     page_size=10,
   )
-  balances = await client.token('ethereum').get_token_balances_paged([
+  balances = await client.token('ethereum').get_token_balances_paged(
     '0x1E6E8695FAb3Eb382534915eA8d7Cc1D1994B152',
     'erc20',
-    {'maxCount': 10},
-  ])
+    options={'maxCount': 10},
+  )
 ```

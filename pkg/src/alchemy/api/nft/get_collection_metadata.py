@@ -1,7 +1,7 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class FloorPrice(TypedDict):
+class CollectionFloorPrice(TypedDict):
   """Current floor price information."""
   marketplace: NotRequired[str]
   """Marketplace that provided the floor price."""
@@ -10,12 +10,12 @@ class FloorPrice(TypedDict):
   priceCurrency: NotRequired[str]
   """Currency of the floor price."""
 
-class Response200(TypedDict):
+class CollectionMetadataResponse(TypedDict):
   name: NotRequired[str]
   """Collection name."""
   slug: NotRequired[str]
   """OpenSea collection slug."""
-  floorPrice: NotRequired[FloorPrice]
+  floorPrice: NotRequired[CollectionFloorPrice]
   description: NotRequired[str]
   """Collection description."""
   externalUrl: NotRequired[str | None]
@@ -27,7 +27,7 @@ class Response200(TypedDict):
   discordUrl: NotRequired[str | None]
   """Discord invite URL."""
 
-adapter = validator(Response200)
+adapter = validator(CollectionMetadataResponse)
 
 class GetCollectionMetadata(Endpoint):
   async def get_collection_metadata(
@@ -35,7 +35,7 @@ class GetCollectionMetadata(Endpoint):
     *,
     collection_slug: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> CollectionMetadataResponse:
     """Retrieves high-level collection metadata for an NFT collection by OpenSea slug.
     
     Args:
@@ -46,7 +46,8 @@ class GetCollectionMetadata(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-collection-metadata-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-collection-metadata-v-3)
+      """
     params: dict = {
       'collectionSlug': collection_slug,
     }

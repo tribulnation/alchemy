@@ -1,7 +1,7 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class OpenSeaMetadata(TypedDict):
+class ContractOpenSeaMetadata(TypedDict):
   """OpenSea collection data. Available on Ethereum and Polygon Mainnet only."""
   floorPrice: NotRequired[float]
   """Current floor price on OpenSea."""
@@ -26,7 +26,7 @@ class OpenSeaMetadata(TypedDict):
   lastIngestedAt: NotRequired[str]
   """ISO timestamp of last OpenSea data ingest."""
 
-class Response200(TypedDict):
+class ContractMetadataResponse(TypedDict):
   address: NotRequired[str]
   """Contract address."""
   name: NotRequired[str]
@@ -41,9 +41,9 @@ class Response200(TypedDict):
   """Address that deployed the contract."""
   deployedBlockNumber: NotRequired[float]
   """Block number when the contract was deployed."""
-  openSeaMetadata: NotRequired[OpenSeaMetadata]
+  openSeaMetadata: NotRequired[ContractOpenSeaMetadata]
 
-adapter = validator(Response200)
+adapter = validator(ContractMetadataResponse)
 
 class GetContractMetadata(Endpoint):
   async def get_contract_metadata(
@@ -51,7 +51,7 @@ class GetContractMetadata(Endpoint):
     *,
     contract_address: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ContractMetadataResponse:
     """Retrieves collection-level metadata for a given NFT contract address.
     
     Args:
@@ -62,7 +62,8 @@ class GetContractMetadata(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-contract-metadata-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-contract-metadata-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
     }

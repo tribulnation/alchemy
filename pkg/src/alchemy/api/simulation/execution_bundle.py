@@ -1,9 +1,9 @@
 from typing_extensions import Any, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-CallTraceKeywords = TypedDict('CallTraceKeywords', {'from': str})
+ExecutionBundleCallTraceKeywords = TypedDict('ExecutionBundleCallTraceKeywords', {'from': str})
 
-class CallTrace(CallTraceKeywords):
+class ExecutionBundleCallTrace(ExecutionBundleCallTraceKeywords):
   type: NotRequired[str]
   """Call type: CALL, STATICCALL, DELEGATECALL, CREATE, etc."""
   to: NotRequired[str]
@@ -15,17 +15,17 @@ class CallTrace(CallTraceKeywords):
   error: NotRequired[str | None]
   calls: NotRequired[list[Any]]
 
-class Item(TypedDict):
+class ExecutionBundleDecodedInput(TypedDict):
   name: NotRequired[str]
   type: NotRequired[str]
   value: NotRequired[str]
 
-TransactionKeywords = TypedDict('TransactionKeywords', {'from': str})
+ExecutionBundleTransactionKeywords = TypedDict('ExecutionBundleTransactionKeywords', {'from': str})
 """
 - `from`: Sender address (20-byte hex).
 """
 
-class Transaction(TransactionKeywords):
+class ExecutionBundleTransaction(ExecutionBundleTransactionKeywords):
   to: str
   """Recipient or contract address (20-byte hex)."""
   value: NotRequired[str]
@@ -33,20 +33,20 @@ class Transaction(TransactionKeywords):
   data: NotRequired[str]
   """ABI-encoded call data for contract interactions."""
 
-class DecodedLog(TypedDict):
+class ExecutionBundleDecodedLog(TypedDict):
   name: NotRequired[str]
-  inputs: NotRequired[list[Item]]
+  inputs: NotRequired[list[ExecutionBundleDecodedInput]]
 
-class Log(TypedDict):
+class ExecutionBundleLog(TypedDict):
   address: NotRequired[str]
   topics: NotRequired[list[str]]
   data: NotRequired[str]
-  decoded: NotRequired[DecodedLog | None]
+  decoded: NotRequired[ExecutionBundleDecodedLog | None]
 
 class ExecutionResult(TypedDict):
-  calls: list[CallTrace]
+  calls: list[ExecutionBundleCallTrace]
   """Recursive call trace for this transaction."""
-  logs: list[Log]
+  logs: list[ExecutionBundleLog]
   """Event logs emitted during this transaction simulation."""
   gasUsed: str
   """Total hex-encoded gas consumed by this simulated transaction."""
@@ -58,7 +58,7 @@ adapter = validator(list[ExecutionResult])
 class ExecutionBundle(Endpoint):
   async def execution_bundle(
     self,
-    transactions: list[Transaction],
+    transactions: list[ExecutionBundleTransaction],
     *,
     validate: bool | None = None
   ) -> list[ExecutionResult]:
@@ -72,6 +72,7 @@ class ExecutionBundle(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/simulation-bundle"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/simulation-bundle)
+      """
     r = await self.rpc_request('alchemy_simulateExecutionBundle', transactions, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

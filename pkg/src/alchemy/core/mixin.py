@@ -50,7 +50,13 @@ def env_api_key(api_key: str | None = None) -> str:
   try:
     return os.environ['ALCHEMY_API_KEY']
   except KeyError as exc:
-    raise ValueError('Either provide `api_key` or set ALCHEMY_API_KEY.') from exc
+    raise AuthError(
+      401,
+      {
+        'error': 'missing_api_key',
+        'message': 'Either provide `api_key` or set ALCHEMY_API_KEY.',
+      },
+    ) from exc
 
 
 def authed_url(base_url: str, api_key: str) -> str:
@@ -105,7 +111,7 @@ class Endpoint:
       self.raise_error(r)
     obj = rpc_response_adapter.validate_json(r.text) if self.should_validate(validate) else r.json()
     if 'error' in obj:
-      self.raise_api_error(r.status_code, obj['error'])
+      self.raise_rpc_error(obj['error'])
     if 'result' not in obj:
       raise ApiError(r.status_code, obj)
     return obj['result']
@@ -127,6 +133,21 @@ class Endpoint:
     if 400 <= status_code < 500:
       raise BadRequest(status_code, payload)
     raise ApiError(status_code, payload)
+
+  def raise_rpc_error(self, payload: Any):
+    """Map JSON-RPC error payloads to shared typed-core exceptions."""
+    code = payload.get('code') if isinstance(payload, dict) else None
+    text = str(payload).lower()
+    if code in {401, 403} or any(
+      term in text
+      for term in ('auth', 'unauthorized', 'forbidden', 'api key', 'apikey', 'invalid key')
+    ):
+      raise AuthError(401, payload)
+    if code == 429 or code == -32005 or 'rate' in text:
+      raise RateLimited(429, payload)
+    if code in {-32700, -32600, -32601, -32602}:
+      raise BadRequest(400, payload)
+    raise ApiError(200, payload)
 
 
 @dataclass(kw_only=True)
@@ -152,8 +173,7 @@ class PortfolioEndpoint(Endpoint):
     http: HttpClient | None = None, base_url: str | None = None,
   ):
     """Create a Portfolio API client."""
-    key = env_api_key(api_key)
-    url = base_url or authed_url(path_join(ALCHEMY_DATA_API_URL, 'data/v1'), key)
+    url = base_url or authed_url(path_join(ALCHEMY_DATA_API_URL, 'data/v1'), env_api_key(api_key))
     return cls(base_url=url, http=http or HttpClient(), validate=validate)
 
 
@@ -166,8 +186,7 @@ class PricesEndpoint(Endpoint):
     http: HttpClient | None = None, base_url: str | None = None,
   ):
     """Create a Prices API client."""
-    key = env_api_key(api_key)
-    url = base_url or authed_url(path_join(ALCHEMY_DATA_API_URL, 'prices/v1'), key)
+    url = base_url or authed_url(path_join(ALCHEMY_DATA_API_URL, 'prices/v1'), env_api_key(api_key))
     return cls(base_url=url, http=http or HttpClient(), validate=validate)
 
 
@@ -181,8 +200,7 @@ class NftEndpoint(Endpoint):
     http: HttpClient | None = None, base_url: str | None = None,
   ):
     """Create an NFT API client."""
-    key = env_api_key(api_key)
-    url = base_url or authed_url(node_url, key)
+    url = base_url or authed_url(node_url, env_api_key(api_key))
     return cls(base_url=url, http=http or HttpClient(), validate=validate)
 
 
@@ -196,6 +214,5 @@ class RpcEndpoint(Endpoint):
     http: HttpClient | None = None, base_url: str | None = None,
   ):
     """Create a JSON-RPC API client."""
-    key = env_api_key(api_key)
-    url = base_url or authed_url(node_url, key)
+    url = base_url or authed_url(node_url, env_api_key(api_key))
     return cls(base_url=url, http=http or HttpClient(), validate=validate)

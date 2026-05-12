@@ -1,7 +1,7 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, PaginatedResponse, validator
 
-class Address(TypedDict):
+class TokensAddress(TypedDict):
   address: str
   """Wallet address whose fungible tokens should be fetched."""
   networks: list[str]
@@ -18,8 +18,8 @@ class TokenPrice(TypedDict):
   value: str
   lastUpdatedAt: str
 
-class Request(TypedDict):
-  addresses: list[Address]
+class TokensRequest(TypedDict):
+  addresses: list[TokensAddress]
   """Array of wallet addresses and the networks to query them on. The docs state a maximum of 2 addresses and 5 networks per address."""
   withMetadata: NotRequired[bool]
   """Whether to include token metadata such as symbol, name, logo, and decimals."""
@@ -34,7 +34,7 @@ class Request(TypedDict):
   pageSize: NotRequired[int]
   """Maximum number of token records to return."""
 
-class Token(TypedDict):
+class PortfolioToken(TypedDict):
   address: str
   network: str
   tokenAddress: str | None
@@ -43,17 +43,17 @@ class Token(TypedDict):
   tokenPrices: NotRequired[list[TokenPrice] | None]
   error: NotRequired[str | None]
 
-class Data(TypedDict):
-  tokens: list[Token]
+class TokensData(TypedDict):
+  tokens: list[PortfolioToken]
   pageKey: str | None
 
-class Response(TypedDict):
-  data: Data
+class TokensResponse(TypedDict):
+  data: TokensData
 
-adapter = validator(Response)
+adapter = validator(TokensResponse)
 
 class Tokens(Endpoint):
-  async def __call__(self, request: Request, *, validate: bool | None = None) -> Response:
+  async def __call__(self, request: TokensRequest, *, validate: bool | None = None) -> TokensResponse:
     """Fetches fungible tokens for multiple wallet addresses and networks, optionally including metadata and prices.
     
     Args:
@@ -64,7 +64,8 @@ class Tokens(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-tokens-by-address"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-tokens-by-address)
+      """
     r = await self.request('POST', '/assets/tokens/by-address', json=request)
     
     if r.status_code != 200:
@@ -72,8 +73,8 @@ class Tokens(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: Request, *, validate: bool | None = None,
-  ) -> PaginatedResponse[Token, str]:
+    self, request: TokensRequest, *, validate: bool | None = None,
+  ) -> PaginatedResponse[PortfolioToken, str]:
     """Fetch token pages.
 
     Args:
@@ -84,7 +85,7 @@ class Tokens(Endpoint):
       An async iterable and awaitable paginated response.
     """
     async def next(state: str):
-      page_request: Request = {**request}
+      page_request: TokensRequest = {**request}
       if state:
         page_request['pageKey'] = state
       response = await self(page_request, validate=validate)

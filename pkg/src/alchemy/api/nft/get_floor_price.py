@@ -1,38 +1,38 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class LooksRare(TypedDict):
-  """Floor price data from LooksRare."""
+class LooksRareFloorPrice(TypedDict):
+  """Floor price data from LooksRareFloorPrice."""
   floorPrice: NotRequired[float]
   """Floor price value."""
   priceCurrency: NotRequired[str]
   """Currency denomination (typically ETH)."""
   collectionUrl: NotRequired[str]
-  """Link to the collection on LooksRare."""
+  """Link to the collection on LooksRareFloorPrice."""
   retrievedAt: NotRequired[str]
   """UTC timestamp when the floor price was fetched."""
   error: NotRequired[str | None]
   """Error message if retrieval failed; null on success."""
 
-class OpenSea(TypedDict):
-  """Floor price data from OpenSea."""
+class OpenSeaFloorPrice(TypedDict):
+  """Floor price data from OpenSeaFloorPrice."""
   floorPrice: NotRequired[float]
   """Floor price value."""
   priceCurrency: NotRequired[str]
   """Currency denomination (typically ETH)."""
   collectionUrl: NotRequired[str]
-  """Link to the collection on OpenSea."""
+  """Link to the collection on OpenSeaFloorPrice."""
   retrievedAt: NotRequired[str]
   """UTC timestamp when the floor price was fetched."""
   error: NotRequired[str | None]
   """Error message if retrieval failed; null on success."""
 
-class Response200(TypedDict):
+class FloorPriceResponse(TypedDict):
   """Object with one key per supported marketplace."""
-  openSea: NotRequired[OpenSea]
-  looksRare: NotRequired[LooksRare]
+  openSea: NotRequired[OpenSeaFloorPrice]
+  looksRare: NotRequired[LooksRareFloorPrice]
 
-adapter = validator(Response200)
+adapter = validator(FloorPriceResponse)
 
 class GetFloorPrice(Endpoint):
   async def get_floor_price(
@@ -41,19 +41,20 @@ class GetFloorPrice(Endpoint):
     contract_address: str,
     collection_slug: str | None = None,
     validate: bool | None = None
-  ) -> Response200:
-    """Retrieves the floor price of an NFT collection on OpenSea and LooksRare marketplaces. Ethereum Mainnet only.
+  ) -> FloorPriceResponse:
+    """Retrieves the floor price of an NFT collection on OpenSeaFloorPrice and LooksRareFloorPrice marketplaces. Ethereum Mainnet only.
     
     Args:
       contract_address: NFT contract address (ERC721 or ERC1155).
-      collection_slug: OpenSea collection slug for the collection.
+      collection_slug: OpenSeaFloorPrice collection slug for the collection.
       validate: Validation override for this request.
     
     Returns:
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-sales-endpoints/get-floor-price-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-sales-endpoints/get-floor-price-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
     }

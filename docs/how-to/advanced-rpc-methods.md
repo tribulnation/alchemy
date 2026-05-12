@@ -21,11 +21,11 @@ async with Alchemy.new() as client:
 from alchemy import Alchemy
 
 async with Alchemy.new() as client:
-  balances = await client.token('ethereum').get_token_balances([
+  balances = await client.token('ethereum').get_token_balances(
     '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
     'erc20',
-    {'maxCount': 5},
-  ])
+    options={'maxCount': 5},
+  )
   print(balances['tokenBalances'])
 ```
 

@@ -23,7 +23,20 @@ nav = [
     { "Overview" = "reference/index.md" },
     "reference/error-handling.md",
     "reference/env-vars.md",
-    { "API" = [{ "Overview" = "reference/api/index.md" }] },
+    { "API" = [
+      { "Overview" = "reference/api/index.md" },
+      "reference/api/alchemy.md",
+      "reference/api/nft.md",
+      { "Portfolio" = [
+        { "Overview" = "reference/api/portfolio/index.md" },
+        "reference/api/portfolio/transactions.md",
+      ] },
+      "reference/api/prices.md",
+      "reference/api/token.md",
+      "reference/api/transfers.md",
+      "reference/api/utility.md",
+      "reference/api/simulation.md",
+    ] },
   ] },
 ]
 

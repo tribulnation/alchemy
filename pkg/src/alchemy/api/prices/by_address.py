@@ -2,7 +2,7 @@ from datetime import datetime
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class PriceEntry(TypedDict):
+class TokenPriceEntry(TypedDict):
   currency: str
   """Currency code (e.g. 'usd')."""
   value: str
@@ -16,28 +16,28 @@ class TokenAddress(TypedDict):
   address: str
   """ERC-20 token contract address."""
 
-class AddressPriceResult(TypedDict):
+class TokenAddressPriceResult(TypedDict):
   network: str
   """Network identifier for this result."""
   address: str
   """Token contract address."""
-  prices: list[PriceEntry]
+  prices: list[TokenPriceEntry]
   """Array of price objects, one per currency."""
   error: NotRequired[str | None]
   """Error message if the address could not be resolved, otherwise null."""
 
-class Request(TypedDict):
+class TokenPricesByAddressRequest(TypedDict):
   addresses: list[TokenAddress]
   """Array of token contract address objects. Maximum 25 addresses across a maximum of 3 distinct networks."""
 
-class Response(TypedDict):
-  data: list[AddressPriceResult]
+class TokenPricesByAddressResponse(TypedDict):
+  data: list[TokenAddressPriceResult]
   """Array of price results, one per requested address."""
 
-adapter = validator(Response)
+adapter = validator(TokenPricesByAddressResponse)
 
 class ByAddress(Endpoint):
-  async def by_address(self, request: Request, *, validate: bool | None = None) -> Response:
+  async def by_address(self, request: TokenPricesByAddressRequest, *, validate: bool | None = None) -> TokenPricesByAddressResponse:
     """Fetches current prices for up to 25 ERC-20 token contracts identified by network and address.
     
     Args:
@@ -48,7 +48,8 @@ class ByAddress(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-token-prices-by-address"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-token-prices-by-address)
+      """
     r = await self.request('POST', '/tokens/by-address', json=request)
     
     if r.status_code != 200:

@@ -28,6 +28,7 @@ class GetTokenAllowance(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-allowance"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-allowance)
+      """
     r = await self.rpc_request('alchemy_getTokenAllowance', token_allowance_request, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

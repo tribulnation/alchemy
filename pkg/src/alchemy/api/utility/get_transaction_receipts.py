@@ -1,11 +1,11 @@
 from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Log(TypedDict):
+class TransactionReceiptLog(TypedDict):
   address: NotRequired[str]
   """Address of the contract that emitted this log."""
   topics: NotRequired[list[str]]
-  """Log topics."""
+  """TransactionReceiptLog topics."""
   data: NotRequired[str]
   """ABI-encoded log data."""
   blockNumber: NotRequired[str]
@@ -21,19 +21,19 @@ class Log(TypedDict):
   removed: NotRequired[bool]
   """True if this log was removed due to a chain reorganization."""
 
-class Params(TypedDict):
+class TransactionReceiptsParams(TypedDict):
   """Provide exactly one of blockNumber or blockHash."""
   blockNumber: NotRequired[str]
   """Hex-encoded block number to fetch receipts for (e.g. '0xF1D1C6')."""
   blockHash: NotRequired[str]
   """32-byte block hash to fetch receipts for."""
 
-ReceiptKeywords = TypedDict('ReceiptKeywords', {'from': str})
+TransactionReceiptKeywords = TypedDict('TransactionReceiptKeywords', {'from': str})
 """
 - `from`: Sender address.
 """
 
-class Receipt(ReceiptKeywords):
+class TransactionReceipt(TransactionReceiptKeywords):
   blockHash: str
   """Hash of the block containing this transaction."""
   blockNumber: str
@@ -54,7 +54,7 @@ class Receipt(ReceiptKeywords):
   """Hex-encoded effective gas price paid in wei."""
   logsBloom: str
   """Bloom filter for the logs in this transaction."""
-  logs: list[Log]
+  logs: list[TransactionReceiptLog]
   """Event logs emitted by this transaction."""
   status: Literal['0x0', '0x1']
   """Transaction status: '0x1' for success, '0x0' for failure."""
@@ -63,19 +63,19 @@ class Receipt(ReceiptKeywords):
   root: NotRequired[str | None]
   """Pre-Byzantium state root; null for post-Byzantium transactions."""
 
-class Response(TypedDict):
-  receipts: list[Receipt]
+class TransactionReceiptsResponse(TypedDict):
+  receipts: list[TransactionReceipt]
   """All transaction receipts for the block."""
 
-adapter = validator(Response)
+adapter = validator(TransactionReceiptsResponse)
 
 class GetTransactionReceipts(Endpoint):
   async def get_transaction_receipts(
     self,
-    params: Params,
+    params: TransactionReceiptsParams,
     *,
     validate: bool | None = None
-  ) -> Response:
+  ) -> TransactionReceiptsResponse:
     """Returns all transaction receipts for a block identified by block number or block hash via the `alchemy_getTransactionReceipts` JSON-RPC method.
 
     Args:
@@ -86,6 +86,7 @@ class GetTransactionReceipts(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/utility-apis/transactions-receipts-endpoints/alchemy-get-transaction-receipts"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/utility-apis/transactions-receipts-endpoints/alchemy-get-transaction-receipts)
+      """
     r = await self.rpc_request('alchemy_getTransactionReceipts', params, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

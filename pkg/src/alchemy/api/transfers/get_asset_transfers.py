@@ -1,17 +1,17 @@
 from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Item(TypedDict):
+class Erc1155TransferItem(TypedDict):
   tokenId: NotRequired[str]
   """ERC-1155 token identifier included in the transfer."""
   value: NotRequired[str]
   """Quantity transferred for this ERC-1155 token identifier."""
 
-class Metadata(TypedDict):
+class TransferMetadata(TypedDict):
   blockTimestamp: NotRequired[str]
   """Timestamp for the block containing this transfer."""
 
-class Params(TypedDict):
+class AssetTransfersParams(TypedDict):
   fromBlock: NotRequired[str | int | Literal['latest', 'indexed']]
   """Inclusive start block. The docs describe this as a hex string, integer, or the `latest` block tag. `indexed` is also documented as a supported block tag in the Transfers overview."""
   toBlock: NotRequired[str | int | Literal['latest', 'indexed']]
@@ -61,7 +61,7 @@ class Transfer(TransferKeywords):
   """Normalized numeric value for native or fungible token transfers when available."""
   erc721TokenId: NotRequired[str | None]
   """ERC-721 token identifier when the transfer category is `erc721`."""
-  erc1155Metadata: NotRequired[list[Item] | None]
+  erc1155Metadata: NotRequired[list[Erc1155TransferItem] | None]
   """Per-token metadata returned for ERC-1155 transfers, or null for non-ERC-1155 categories."""
   tokenId: NotRequired[str | None]
   """Token identifier when Alchemy returns a single token ID field."""
@@ -70,24 +70,24 @@ class Transfer(TransferKeywords):
   category: Literal['external', 'internal', 'erc20', 'erc721', 'erc1155', 'specialnft']
   """Transfer category matched by this result."""
   rawContract: RawContract
-  metadata: NotRequired[Metadata | None]
+  metadata: NotRequired[TransferMetadata | None]
   """Returned when `withMetadata=true`; otherwise commonly null in live responses."""
 
-class Response(TypedDict):
+class AssetTransfersResponse(TypedDict):
   transfers: list[Transfer]
   """Transfer results matching the requested filters."""
   pageKey: NotRequired[str]
   """Pagination cursor for retrieving the next page of transfers."""
 
-adapter = validator(Response)
+adapter = validator(AssetTransfersResponse)
 
 class GetAssetTransfers(Endpoint):
   async def get_asset_transfers(
     self,
-    params: Params,
+    params: AssetTransfersParams,
     *,
     validate: bool | None = None
-  ) -> Response:
+  ) -> AssetTransfersResponse:
     """Fetches historical transfers for an address, contract, or block range via the `alchemy_getAssetTransfers` JSON-RPC method.
 
     Args:
@@ -98,6 +98,7 @@ class GetAssetTransfers(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers)
+      """
     r = await self.rpc_request('alchemy_getAssetTransfers', params, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

@@ -1,23 +1,24 @@
-from typing_extensions import Any, NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
+from .get_nft_metadata import NftContract
 
-class Body(TypedDict):
+class ContractMetadataBatchRequest(TypedDict):
   contractAddresses: list[str]
   """List of NFT contract addresses."""
 
-class Response200(TypedDict):
-  contracts: NotRequired[list[dict[str, Any]]]
+class ContractMetadataBatchResponse(TypedDict):
+  contracts: NotRequired[list[NftContract]]
   """Array of contract metadata objects, one per input address."""
 
-adapter = validator(Response200)
+adapter = validator(ContractMetadataBatchResponse)
 
 class GetContractMetadataBatch(Endpoint):
   async def get_contract_metadata_batch(
     self,
-    body: Body,
+    body: ContractMetadataBatchRequest,
     *,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ContractMetadataBatchResponse:
     """Fetches collection-level metadata for multiple NFT contracts in a single request.
     
     Args:
@@ -28,7 +29,8 @@ class GetContractMetadataBatch(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-contract-metadata-batch-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-contract-metadata-batch-v-3)
+      """
     r = await self.request('POST', '/getContractMetadataBatch', json=body)
     
     if r.status_code != 200:

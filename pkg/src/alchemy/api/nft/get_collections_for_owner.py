@@ -1,7 +1,19 @@
-from typing_extensions import Any, Literal, NotRequired, TypedDict
+from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
+from .get_contracts_for_owner import OwnerDisplayNft
+from .get_nft_metadata import NftContract
+from .get_nft_metadata import NftImage
 
-class Item(TypedDict):
+class CollectionFloorPrice(TypedDict):
+  """Collection floor price data."""
+  marketplace: NotRequired[str | None]
+  """Marketplace for the floor price."""
+  price: NotRequired[float | None]
+  """Floor price amount."""
+  currency: NotRequired[str | None]
+  """Floor price currency."""
+
+class OwnerCollection(TypedDict):
   name: NotRequired[str]
   """Collection name."""
   slug: NotRequired[str]
@@ -10,28 +22,28 @@ class Item(TypedDict):
   """External URL for the collection."""
   bannerImageUrl: NotRequired[str | None]
   """Banner image URL."""
-  floorPrice: NotRequired[dict[str, Any]]
+  floorPrice: NotRequired[CollectionFloorPrice]
   """Floor price data including marketplace, price, and currency."""
-  contract: NotRequired[dict[str, Any]]
+  contract: NotRequired[NftContract]
   """Contract address and metadata."""
   totalBalance: NotRequired[str]
   """Sum of NFT balances across token IDs."""
   numDistinctTokensOwned: NotRequired[str]
   """Count of distinct token IDs held."""
-  displayNft: NotRequired[dict[str, Any]]
+  displayNft: NotRequired[OwnerDisplayNft]
   """Representative NFT (tokenId, name)."""
-  image: NotRequired[dict[str, Any]]
+  image: NotRequired[NftImage]
   """Collection image URLs."""
 
-class Response200(TypedDict):
-  collections: NotRequired[list[Item]]
+class OwnerCollectionsResponse(TypedDict):
+  collections: NotRequired[list[OwnerCollection]]
   """Array of collection objects held by the owner."""
   pageKey: NotRequired[str]
   """Cursor for next page."""
   totalCount: NotRequired[int]
   """Total number of collections held."""
 
-adapter = validator(Response200)
+adapter = validator(OwnerCollectionsResponse)
 
 class GetCollectionsForOwner(Endpoint):
   async def get_collections_for_owner(
@@ -44,7 +56,7 @@ class GetCollectionsForOwner(Endpoint):
     include_filters: list[Literal['SPAM', 'AIRDROPS']] | None = None,
     exclude_filters: list[Literal['SPAM', 'AIRDROPS']] | None = None,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> OwnerCollectionsResponse:
     """Returns all NFT collections held by a given wallet address, with collection-level metadata and floor prices.
     
     Args:
@@ -60,7 +72,8 @@ class GetCollectionsForOwner(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-collections-for-owner-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-collections-for-owner-v-3)
+      """
     params: dict = {
       'owner': owner,
     }

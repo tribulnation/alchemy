@@ -1,7 +1,7 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Item(TypedDict):
+class RarityAttribute(TypedDict):
   traitType: NotRequired[str]
   """Name of the trait category (e.g., Hat, Color, Face)."""
   value: NotRequired[str]
@@ -9,11 +9,11 @@ class Item(TypedDict):
   prevalence: NotRequired[float]
   """Float from 0 to 1 representing what fraction of the collection has this trait value."""
 
-class Response200(TypedDict):
-  rarities: NotRequired[list[Item]]
+class ComputeRarityResponse(TypedDict):
+  rarities: NotRequired[list[RarityAttribute]]
   """Array of trait rarity entries for each attribute of the NFT."""
 
-adapter = validator(Response200)
+adapter = validator(ComputeRarityResponse)
 
 class ComputeRarity(Endpoint):
   async def compute_rarity(
@@ -22,7 +22,7 @@ class ComputeRarity(Endpoint):
     contract_address: str,
     token_id: str,
     validate: bool | None = None
-  ) -> Response200:
+  ) -> ComputeRarityResponse:
     """Computes the rarity of each trait attribute for a specific NFT token within its collection.
     
     Args:
@@ -34,7 +34,8 @@ class ComputeRarity(Endpoint):
       The validated endpoint response.
     
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/compute-rarity-v-3"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/compute-rarity-v-3)
+      """
     params: dict = {
       'contractAddress': contract_address,
       'tokenId': token_id,

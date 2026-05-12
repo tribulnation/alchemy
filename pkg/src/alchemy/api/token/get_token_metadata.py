@@ -1,7 +1,7 @@
 from typing_extensions import NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
 
-class Response(TypedDict):
+class TokenMetadataResponse(TypedDict):
   name: NotRequired[str | None]
   """Token full name (e.g. 'USD Coin')."""
   symbol: NotRequired[str | None]
@@ -11,7 +11,7 @@ class Response(TypedDict):
   logo: NotRequired[str | None]
   """URL of the token logo image; null if unavailable."""
 
-adapter = validator(Response)
+adapter = validator(TokenMetadataResponse)
 
 class GetTokenMetadata(Endpoint):
   async def get_token_metadata(
@@ -19,7 +19,7 @@ class GetTokenMetadata(Endpoint):
     contract_address: str,
     *,
     validate: bool | None = None
-  ) -> Response:
+  ) -> TokenMetadataResponse:
     """Returns name, symbol, decimals, and logo for a token contract via the `alchemy_getTokenMetadata` JSON-RPC method.
 
     Args:
@@ -30,6 +30,7 @@ class GetTokenMetadata(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-metadata"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-metadata)
+      """
     r = await self.rpc_request('alchemy_getTokenMetadata', contract_address, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r

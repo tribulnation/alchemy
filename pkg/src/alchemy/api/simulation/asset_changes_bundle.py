@@ -30,12 +30,12 @@ class AssetChange(AssetChangeKeywords):
   logo: NotRequired[str | None]
   """Token logo URL."""
 
-TransactionKeywords = TypedDict('TransactionKeywords', {'from': str})
+AssetChangesBundleTransactionKeywords = TypedDict('AssetChangesBundleTransactionKeywords', {'from': str})
 """
 - `from`: Sender address (20-byte hex).
 """
 
-class Transaction(TransactionKeywords):
+class AssetChangesBundleTransaction(AssetChangesBundleTransactionKeywords):
   to: str
   """Recipient or contract address (20-byte hex)."""
   value: NotRequired[str]
@@ -56,7 +56,7 @@ adapter = validator(list[AssetChangesResult])
 class AssetChangesBundle(Endpoint):
   async def asset_changes_bundle(
     self,
-    transactions: list[Transaction],
+    transactions: list[AssetChangesBundleTransaction],
     *,
     validate: bool | None = None
   ) -> list[AssetChangesResult]:
@@ -70,6 +70,7 @@ class AssetChangesBundle(Endpoint):
       The validated endpoint response.
 
     References:
-      Upstream docs: https://www.alchemy.com/docs/reference/simulation-bundle"""
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/simulation-bundle)
+      """
     r = await self.rpc_request('alchemy_simulateAssetChangesBundle', transactions, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r
