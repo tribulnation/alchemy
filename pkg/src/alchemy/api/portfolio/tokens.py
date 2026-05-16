@@ -18,7 +18,7 @@ class TokenPrice(TypedDict):
   value: str
   lastUpdatedAt: str
 
-class TokensRequest(TypedDict):
+class TokensBaseRequest(TypedDict):
   addresses: list[TokensAddress]
   """Array of wallet addresses and the networks to query them on. The docs state a maximum of 2 addresses and 5 networks per address."""
   withMetadata: NotRequired[bool]
@@ -29,10 +29,12 @@ class TokensRequest(TypedDict):
   """Whether to include the native gas token balance for each requested network."""
   includeErc20Tokens: NotRequired[bool]
   """Whether to include ERC-20 token balances."""
+  pageSize: NotRequired[int]
+  """Maximum number of token records to return per page."""
+
+class TokensRequest(TokensBaseRequest):
   pageKey: NotRequired[str]
   """Pagination cursor returned by a previous response."""
-  pageSize: NotRequired[int]
-  """Maximum number of token records to return."""
 
 class PortfolioToken(TypedDict):
   address: str
@@ -73,16 +75,19 @@ class Tokens(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: TokensRequest, *, validate: bool | None = None,
+    self, request: TokensBaseRequest, *, validate: bool | None = None,
   ) -> PaginatedResponse[PortfolioToken, str]:
-    """Fetch token pages.
+    """Paged version of the tokens endpoint.
 
     Args:
       request: Request payload.
       validate: Validation override for each request.
 
     Returns:
-      An async iterable and awaitable paginated response.
+      An async iterable and awaitable paginated response over tokens.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-tokens-by-address)
     """
     async def next(state: str):
       page_request: TokensRequest = {**request}

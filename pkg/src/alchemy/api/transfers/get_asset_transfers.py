@@ -1,5 +1,6 @@
 from typing_extensions import Literal, NotRequired, TypedDict
 from alchemy.core import Endpoint, validator
+from alchemy.core.util.paging import PaginatedResponse
 
 class Erc1155TransferItem(TypedDict):
   tokenId: NotRequired[str]
@@ -11,7 +12,7 @@ class TransferMetadata(TypedDict):
   blockTimestamp: NotRequired[str]
   """Timestamp for the block containing this transfer."""
 
-class AssetTransfersParams(TypedDict):
+class AssetTransfersBaseParams(TypedDict):
   fromBlock: NotRequired[str | int | Literal['latest', 'indexed']]
   """Inclusive start block. The docs describe this as a hex string, integer, or the `latest` block tag. `indexed` is also documented as a supported block tag in the Transfers overview."""
   toBlock: NotRequired[str | int | Literal['latest', 'indexed']]
@@ -28,12 +29,14 @@ class AssetTransfersParams(TypedDict):
   """Exclude transfers whose value is zero."""
   maxCount: NotRequired[int | str]
   """Maximum number of results to return. The docs state that 1000 (0x3e8) is the maximum per request."""
-  pageKey: NotRequired[str]
-  """Pagination cursor returned by a previous response."""
   withMetadata: NotRequired[bool]
   """Include transfer metadata such as the block timestamp."""
   order: NotRequired[Literal['asc', 'desc']]
   """Sort order for transfers. The docs say the default order is ascending; set to `desc` for newest to oldest."""
+
+class AssetTransfersParams(AssetTransfersBaseParams):
+  pageKey: NotRequired[str]
+  """Pagination cursor returned by a previous response."""
 
 class RawContract(TypedDict):
   value: NotRequired[str | None]
@@ -82,6 +85,21 @@ class AssetTransfersResponse(TypedDict):
 adapter = validator(AssetTransfersResponse)
 
 class GetAssetTransfers(Endpoint):
+  async def transfers(self, params: AssetTransfersParams, *, validate: bool | None = None) -> AssetTransfersResponse:
+    """Fetch asset transfers.
+
+    Args:
+      params: Transfer filter parameters.
+      validate: Validation override for this request.
+
+    Returns:
+      The validated transfer response.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers)
+    """
+    return await self.get_asset_transfers(params, validate=validate)
+
   async def get_asset_transfers(
     self,
     params: AssetTransfersParams,
@@ -99,6 +117,49 @@ class GetAssetTransfers(Endpoint):
 
     References:
       - [Alchemy API docs](https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers)
-      """
+    """
     r = await self.rpc_request('alchemy_getAssetTransfers', params, validate=validate)
     return adapter.python(r) if self.should_validate(validate) else r
+
+  def transfers_paged(
+    self, params: AssetTransfersBaseParams, *, validate: bool | None = None,
+  ) -> PaginatedResponse[Transfer, str]:
+    """Paged version of transfers.
+
+    Args:
+      params: Request payload.
+      validate: Validation override for each request.
+
+    Returns:
+      An async iterable and awaitable paginated response over transfers.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers)
+    """
+    state = ''
+
+    async def next(state: str):
+      page_params: AssetTransfersParams = {**params}
+      if state:
+        page_params['pageKey'] = state
+      r = await self.get_asset_transfers(page_params, validate=validate)
+      return r['transfers'], r.get('pageKey')
+
+    return PaginatedResponse(state, next)
+
+  def get_asset_transfers_paged(
+    self, params: AssetTransfersBaseParams, *, validate: bool | None = None,
+  ) -> PaginatedResponse[Transfer, str]:
+    """Paged version of get_asset_transfers.
+
+    Args:
+      params: Request payload.
+      validate: Validation override for each request.
+
+    Returns:
+      An async iterable and awaitable paginated response over transfers.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/transfers-api/transfers-endpoints/alchemy-get-asset-transfers)
+    """
+    return self.transfers_paged(params, validate=validate)

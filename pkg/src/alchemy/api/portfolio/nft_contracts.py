@@ -40,18 +40,20 @@ class NftContract(TypedDict):
   network: str
   address: str
 
-class NftContractsRequest(TypedDict):
+class NftContractsBaseRequest(TypedDict):
   addresses: list[NftContractsAddress]
   withMetadata: NotRequired[bool]
   """Whether to include collection-level metadata in each returned contract."""
-  pageKey: NotRequired[str]
-  """Pagination cursor returned by a previous response."""
   pageSize: NotRequired[int]
-  """Maximum number of contract records to return."""
+  """Maximum number of contract records to return per page."""
   orderBy: NotRequired[str]
   """Field Alchemy should use to order the returned contracts."""
   sortOrder: NotRequired[Literal['asc', 'desc']]
   """Sort direction for the selected ordering field."""
+
+class NftContractsRequest(NftContractsBaseRequest):
+  pageKey: NotRequired[str]
+  """Pagination cursor returned by a previous response."""
 
 class NftContractsData(TypedDict):
   contracts: list[NftContract]
@@ -87,16 +89,19 @@ class NftContracts(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: NftContractsRequest, *, validate: bool | None = None,
+    self, request: NftContractsBaseRequest, *, validate: bool | None = None,
   ) -> PaginatedResponse[NftContract, str]:
-    """Fetch NFT contract pages.
+    """Paged version of the NFT contracts endpoint.
 
     Args:
       request: Request payload.
       validate: Validation override for each request.
 
     Returns:
-      An async iterable and awaitable paginated response.
+      An async iterable and awaitable paginated response over NFT contracts.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-nft-contracts-by-address)
     """
     async def next(state: str):
       page_request: NftContractsRequest = {**request}

@@ -1,5 +1,5 @@
 from typing_extensions import NotRequired, TypedDict
-from alchemy.core import Endpoint, validator
+from alchemy.core import Endpoint, PaginatedResponse, validator
 
 class OwnerTokenBalance(TypedDict):
   tokenId: NotRequired[str]
@@ -22,6 +22,33 @@ class ContractOwnersResponse(TypedDict):
 adapter = validator(ContractOwnersResponse)
 
 class GetOwnersForContract(Endpoint):
+  def get_owners_for_contract_paged(
+    self, *, contract_address: str, with_token_balances: bool | None = None,
+    validate: bool | None = None,
+  ) -> PaginatedResponse[ContractOwner, str]:
+    """Paged version of get_owners_for_contract.
+
+    Args:
+      contract_address: NFT contract address.
+      with_token_balances: If true, includes per-token balances for each owner.
+      validate: Validation override for each request.
+
+    Returns:
+      An async iterable and awaitable paginated response over contract owners.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/nft-api/api-reference/nft-ownership-endpoints/get-owners-for-contract-v-3)
+    """
+    async def next(state: str):
+      response = await self.get_owners_for_contract(
+        contract_address=contract_address,
+        with_token_balances=with_token_balances,
+        page_key=state or None, validate=validate,
+      )
+      return response.get('owners', []), response.get('pageKey')
+
+    return PaginatedResponse('', next)
+
   async def get_owners_for_contract(
     self,
     *,

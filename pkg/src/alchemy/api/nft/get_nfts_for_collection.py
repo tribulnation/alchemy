@@ -1,5 +1,5 @@
 from typing_extensions import NotRequired, TypedDict
-from alchemy.core import Endpoint, validator
+from alchemy.core import Endpoint, PaginatedResponse, validator
 from .get_nft_metadata import NftMetadataResponse
 
 class CollectionNftsResponse(TypedDict):
@@ -13,6 +13,39 @@ class CollectionNftsResponse(TypedDict):
 adapter = validator(CollectionNftsResponse)
 
 class GetNftsForCollection(Endpoint):
+  def get_nfts_for_collection_paged(
+    self, *, contract_address: str | None = None,
+    collection_slug: str | None = None, with_metadata: bool | None = None,
+    limit: int | None = None, token_uri_timeout_in_ms: int | None = None,
+    validate: bool | None = None,
+  ) -> PaginatedResponse[NftMetadataResponse, str]:
+    """Paged version of get_nfts_for_collection.
+
+    Args:
+      contract_address: NFT contract address (ERC721 or ERC1155).
+      collection_slug: OpenSea collection slug.
+      with_metadata: Include NFT metadata. Defaults to true.
+      limit: Number of NFTs to return per page. Defaults to 100.
+      token_uri_timeout_in_ms: Timeout for metadata fetching in milliseconds. Set to 0 for cache-only.
+      validate: Validation override for each request.
+
+    Returns:
+      An async iterable and awaitable paginated response over NFT metadata.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-metadata-endpoints/get-nf-ts-for-collection-v-3)
+    """
+    async def next(state: str):
+      response = await self.get_nfts_for_collection(
+        contract_address=contract_address, collection_slug=collection_slug,
+        with_metadata=with_metadata, start_token=state or None,
+        limit=limit, token_uri_timeout_in_ms=token_uri_timeout_in_ms,
+        validate=validate,
+      )
+      return response.get('nfts', []), response.get('pageKey') or response.get('nextToken')
+
+    return PaginatedResponse('', next)
+
   async def get_nfts_for_collection(
     self,
     *,

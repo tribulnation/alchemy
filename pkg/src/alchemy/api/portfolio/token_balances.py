@@ -22,17 +22,19 @@ class TokenBalancesData(TypedDict):
   pageKey: str | None
   """Pagination cursor for the next page, or null when there are no more results."""
 
-class TokenBalancesRequest(TypedDict):
+class TokenBalancesBaseRequest(TypedDict):
   addresses: list[TokenBalancesAddress]
   """Wallet addresses and networks to query for balances."""
   includeNativeTokens: NotRequired[bool]
   """Whether to include the native gas token balance for each requested network."""
   includeErc20Tokens: NotRequired[bool]
   """Whether to include ERC-20 token balances."""
+  pageSize: NotRequired[int]
+  """Maximum number of balance records to return per page."""
+
+class TokenBalancesRequest(TokenBalancesBaseRequest):
   pageKey: NotRequired[str]
   """Pagination cursor returned by a previous response."""
-  pageSize: NotRequired[int]
-  """Maximum number of balance records to return."""
 
 class TokenBalancesResponse(TypedDict):
   data: TokenBalancesData
@@ -63,16 +65,19 @@ class TokenBalances(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: TokenBalancesRequest, *, validate: bool | None = None,
+    self, request: TokenBalancesBaseRequest, *, validate: bool | None = None,
   ) -> PaginatedResponse[PortfolioTokenBalance, str]:
-    """Fetch token balance pages.
+    """Paged version of the token balances endpoint.
 
     Args:
       request: Request payload.
       validate: Validation override for each request.
 
     Returns:
-      An async iterable and awaitable paginated response.
+      An async iterable and awaitable paginated response over token balances.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-token-balances-by-address)
     """
     async def next(state: str):
       page_request: TokenBalancesRequest = {**request}

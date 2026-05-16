@@ -1,5 +1,5 @@
 from typing_extensions import Literal, NotRequired, TypedDict
-from alchemy.core import Endpoint, Timestamp, validator
+from alchemy.core import Endpoint, PaginatedResponse, Timestamp, validator
 from .get_nft_metadata import NftCollection
 from .get_nft_metadata import NftContract
 from .get_nft_metadata import NftImage
@@ -69,6 +69,53 @@ class OwnedNftsResponse(TypedDict):
 adapter = validator(OwnedNftsResponse)
 
 class GetNftsForOwner(Endpoint):
+  def get_nfts_for_owner_paged(
+    self,
+    *,
+    owner: str,
+    contract_addresses: list[str] | None = None,
+    with_metadata: bool | None = None,
+    order_by: Literal['transferTime'] | None = None,
+    exclude_filters: list[Literal['SPAM', 'AIRDROPS']] | None = None,
+    include_filters: list[Literal['SPAM', 'AIRDROPS']] | None = None,
+    spam_confidence_level: Literal['VERY_HIGH', 'HIGH', 'MEDIUM', 'LOW'] | None = None,
+    token_uri_timeout_in_ms: int | None = None,
+    page_size: int | None = None,
+    validate: bool | None = None,
+  ) -> PaginatedResponse[OwnedNft, str]:
+    """Paged version of get_nfts_for_owner.
+
+    Args:
+      owner: Wallet address whose NFTs should be fetched. Supports ENS format on Eth Mainnet.
+      contract_addresses: Filter results to specific NFT contract addresses. Maximum 45 contracts.
+      with_metadata: Whether to include NFT metadata (name, description, image, attributes). Defaults to true.
+      order_by: Sort order. 'transferTime' sorts by most recent transfer first.
+      exclude_filters: Exclude NFTs matching these filters. Mutually exclusive with includeFilters. Values: SPAM, AIRDROPS.
+      include_filters: Include only NFTs matching these filters. Mutually exclusive with excludeFilters. Values: SPAM, AIRDROPS.
+      spam_confidence_level: Spam confidence threshold (paid tier only). One of: VERY_HIGH, HIGH, MEDIUM, LOW.
+      token_uri_timeout_in_ms: Timeout in milliseconds for fetching token URIs. Set to 0 for cache-only access.
+      page_size: Number of NFTs per page. Maximum 100. Defaults to 100.
+      validate: Validation override for each request.
+
+    Returns:
+      An async iterable and awaitable paginated response over owned NFTs.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-nf-ts-for-owner-v-3)
+      """
+    async def next(state: str):
+      response = await self.get_nfts_for_owner(
+        owner=owner, contract_addresses=contract_addresses,
+        with_metadata=with_metadata, order_by=order_by,
+        exclude_filters=exclude_filters, include_filters=include_filters,
+        spam_confidence_level=spam_confidence_level,
+        token_uri_timeout_in_ms=token_uri_timeout_in_ms,
+        page_key=state or None, page_size=page_size, validate=validate,
+      )
+      return response.get('ownedNfts', []), response.get('pageKey')
+
+    return PaginatedResponse('', next)
+
   async def get_nfts_for_owner(
     self,
     *,
@@ -85,7 +132,7 @@ class GetNftsForOwner(Endpoint):
     validate: bool | None = None
   ) -> OwnedNftsResponse:
     """Fetches all NFTs owned by a given wallet address on the requested chain. Supports filtering by contract, spam confidence, and metadata inclusion.
-    
+
     Args:
       owner: Wallet address whose NFTs should be fetched. Supports ENS format on Eth Mainnet.
       contract_addresses: Filter results to specific NFT contract addresses. Maximum 45 contracts.
@@ -98,10 +145,10 @@ class GetNftsForOwner(Endpoint):
       page_key: Pagination cursor returned by a previous response.
       page_size: Number of NFTs per page. Maximum 100. Defaults to 100.
       validate: Validation override for this request.
-    
+
     Returns:
       The validated endpoint response.
-    
+
     References:
       - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-ownership-endpoints/get-nf-ts-for-owner-v-3)
       """
@@ -127,7 +174,7 @@ class GetNftsForOwner(Endpoint):
     if page_size is not None:
       params['pageSize'] = page_size
     r = await self.request('GET', '/getNFTsForOwner', params=params)
-    
+
     if r.status_code != 200:
       self.raise_error(r)
     return adapter.json(r.text) if self.should_validate(validate) else r.json()

@@ -41,18 +41,20 @@ class PortfolioNft(TypedDict):
   mint: NotRequired[NftMint | None]
   timeLastUpdated: NotRequired[Timestamp | None]
 
-class PortfolioNftsRequest(TypedDict):
+class PortfolioNftsBaseRequest(TypedDict):
   addresses: list[NftsAddress]
   withMetadata: NotRequired[bool]
   """Whether to include NFT metadata in each returned item."""
-  pageKey: NotRequired[str]
-  """Pagination cursor returned by a previous response."""
   pageSize: NotRequired[int]
-  """Maximum number of NFT records to return."""
+  """Maximum number of NFT records to return per page."""
   orderBy: NotRequired[str]
   """Field Alchemy should use to order the returned NFTs."""
   sortOrder: NotRequired[Literal['asc', 'desc']]
   """Sort direction for the selected ordering field."""
+
+class PortfolioNftsRequest(PortfolioNftsBaseRequest):
+  pageKey: NotRequired[str]
+  """Pagination cursor returned by a previous response."""
 
 class PortfolioNftsData(TypedDict):
   ownedNfts: list[PortfolioNft]
@@ -85,16 +87,19 @@ class Nfts(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def paged(
-    self, request: PortfolioNftsRequest, *, validate: bool | None = None,
+    self, request: PortfolioNftsBaseRequest, *, validate: bool | None = None,
   ) -> PaginatedResponse[PortfolioNft, str]:
-    """Fetch NFT pages.
+    """Paged version of the NFTs endpoint.
 
     Args:
       request: Request payload.
       validate: Validation override for each request.
 
     Returns:
-      An async iterable and awaitable paginated response.
+      An async iterable and awaitable paginated response over NFTs.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-nfts-by-address)
     """
     async def next(state: str):
       page_request: PortfolioNftsRequest = {**request}

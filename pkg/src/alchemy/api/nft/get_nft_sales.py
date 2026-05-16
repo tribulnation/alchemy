@@ -1,5 +1,5 @@
 from typing_extensions import Literal, NotRequired, TypedDict
-from alchemy.core import Endpoint, Timestamp, validator
+from alchemy.core import Endpoint, PaginatedResponse, Timestamp, validator
 
 class NftSaleFee(TypedDict):
   """Token payment amount in an NFT sale."""
@@ -64,6 +64,51 @@ class NftSalesResponse(TypedDict):
 adapter = validator(NftSalesResponse)
 
 class GetNftSales(Endpoint):
+  def get_nft_sales_paged(
+    self, *, from_block: str | None = None, to_block: str | None = None,
+    order: Literal['asc', 'desc'] | None = None,
+    marketplace: Literal['seaport', 'wyvern', 'looksrare', 'x2y2', 'blur', 'cryptopunks'] | None = None,
+    contract_address: str | None = None,
+    token_id: str | None = None,
+    buyer_address: str | None = None,
+    seller_address: str | None = None,
+    taker: Literal['BUYER', 'SELLER'] | None = None,
+    limit: int | None = None,
+    validate: bool | None = None,
+  ) -> PaginatedResponse[NftSale, str]:
+    """Paged version of get_nft_sales.
+
+    Args:
+      from_block: Start block number.
+      to_block: End block number.
+      order: Sort direction from fromBlock.
+      marketplace: Filter by marketplace.
+      contract_address: Filter by NFT contract address.
+      token_id: Filter by token ID.
+      buyer_address: Filter by buyer wallet address.
+      seller_address: Filter by seller wallet address.
+      taker: Filter by price taker role.
+      limit: Max results to return per page.
+      validate: Validation override for each request.
+
+    Returns:
+      An async iterable and awaitable paginated response over NFT sales.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/reference/nft-api-endpoints/nft-api-endpoints/nft-sales-endpoints/get-nft-sales-v-3)
+    """
+    async def next(state: str):
+      response = await self.get_nft_sales(
+        from_block=from_block, to_block=to_block, order=order,
+        marketplace=marketplace, contract_address=contract_address,
+        token_id=token_id, buyer_address=buyer_address,
+        seller_address=seller_address, taker=taker, limit=limit,
+        page_key=state or None, validate=validate,
+      )
+      return response.get('nftSales', []), response.get('pageKey')
+
+    return PaginatedResponse('', next)
+
   async def get_nft_sales(
     self,
     *,

@@ -18,15 +18,17 @@ class PortfolioTransaction(TypedDict):
   fromAddress: NotRequired[str]
   toAddress: NotRequired[str | None]
 
-class TransactionHistoryRequest(TypedDict):
+class TransactionHistoryBaseRequest(TypedDict):
   addresses: list[TransactionHistoryAddress]
   """Array of address and networks pairs. The docs say this endpoint is currently limited to 1 address pair and at most 2 networks."""
+  limit: NotRequired[int]
+  """Maximum number of transactions to return in this page."""
+
+class TransactionHistoryRequest(TransactionHistoryBaseRequest):
   before: NotRequired[str]
   """Cursor pointing to the previous set of results."""
   after: NotRequired[str]
   """Cursor pointing to the end of the current set of results."""
-  limit: NotRequired[int]
-  """Maximum number of transactions to return in this page."""
   pageKey: NotRequired[str]
   """Pagination cursor returned by a previous response."""
 
@@ -59,16 +61,19 @@ class History(Endpoint):
     return adapter.json(r.text) if self.should_validate(validate) else r.json()
 
   def history_paged(
-    self, request: TransactionHistoryRequest, *, validate: bool | None = None,
+    self, request: TransactionHistoryBaseRequest, *, validate: bool | None = None,
   ) -> PaginatedResponse[PortfolioTransaction, str]:
-    """Fetch transaction history pages.
+    """Paged version of the transaction history endpoint.
 
     Args:
       request: Request payload.
       validate: Validation override for each request.
 
     Returns:
-      An async iterable and awaitable paginated response.
+      An async iterable and awaitable paginated response over historical transactions.
+
+    References:
+      - [Alchemy API docs](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address)
     """
     async def next(state: str):
       page_request: TransactionHistoryRequest = {**request}
