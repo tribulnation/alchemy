@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "typed-alchemy"
-version = "1.0.2"
+version = "1.0.3"
 authors = [
   {name="Marcel Claramunt", email="marcel@tribulnation.com"}
 ]
 description = "A fully typed, validated async client for the Alchemy API."
-license = "GPL-3.0-only"
+license = "MIT"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
